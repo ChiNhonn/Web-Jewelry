@@ -20,6 +20,15 @@ public class ProductController {
 
     private final ProductService productService;
 
+    @GetMapping
+    @Operation(summary = "Search and filter products", description = "Tìm kiếm và lọc sản phẩm theo từ khóa, danh mục, khoảng giá, chất liệu và phân trang")
+    public ResponseEntity<com.jewelry.store.dto.common.ApiResponse<com.jewelry.store.dto.common.PageResponse<com.jewelry.store.dto.response.ProductSummaryResponse>>> filterProducts(
+            @jakarta.validation.Valid com.jewelry.store.dto.request.ProductFilterRequest filterRequest) {
+        com.jewelry.store.dto.common.PageResponse<com.jewelry.store.dto.response.ProductSummaryResponse> response = 
+                productService.filterProducts(filterRequest);
+        return ResponseEntity.ok(com.jewelry.store.dto.common.ApiResponse.success(response));
+    }
+
     @GetMapping("/{slug}")
     @Operation(summary = "Get product detail by slug", description = "Lấy chi tiết sản phẩm trang sức, bộ ảnh gallery và các biến thể size/giá")
     public ResponseEntity<ApiResponse<ProductDetailResponse>> getProductDetail(@PathVariable String slug) {

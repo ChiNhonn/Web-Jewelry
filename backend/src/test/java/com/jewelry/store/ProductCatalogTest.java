@@ -70,4 +70,20 @@ class ProductCatalogTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @DisplayName("Khách hàng có thể tìm kiếm và lọc danh sách sản phẩm với phân trang chuẩn")
+    void testPublicCanSearchAndFilterProducts() throws Exception {
+        mockMvc.perform(get("/api/v1/products")
+                        .param("keyword", "Kim Cương")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sortBy", "createdAt")
+                        .param("sortDirection", "desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.content").isArray())
+                .andExpect(jsonPath("$.data.page").value(0))
+                .andExpect(jsonPath("$.data.size").value(10));
+    }
 }

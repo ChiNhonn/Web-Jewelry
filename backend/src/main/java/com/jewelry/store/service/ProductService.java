@@ -15,4 +15,7 @@ public interface ProductService {
     ProductDetailResponse getProductDetailBySlug(String slug);
 
     ProductDetailResponse getProductDetailById(Long id);
+
+    com.jewelry.store.dto.common.PageResponse<com.jewelry.store.dto.response.ProductSummaryResponse> filterProducts(
+            com.jewelry.store.dto.request.ProductFilterRequest filterRequest);
 }

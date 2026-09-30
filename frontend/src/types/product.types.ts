@@ -63,3 +63,17 @@ export interface ProductDetail {
   createdAt: string;
   updatedAt?: string;
 }
+
+export interface ProductFilterParams {
+  keyword?: string;
+  categorySlug?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  material?: string;
+  brand?: string;
+  isFeatured?: boolean;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+}

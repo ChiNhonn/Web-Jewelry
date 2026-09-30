@@ -26,4 +26,14 @@ export const productService = {
     const response = await apiClient.get<ApiResponse<ProductDetail>>(`/api/v1/products/${slug}`);
     return response.data.data;
   },
+
+  /**
+   * Search and filter products with pagination
+   */
+  async filterProducts(params?: import('../types/product.types').ProductFilterParams): Promise<import('../types/api.types').PageResponse<import('../types/product.types').ProductSummary>> {
+    const response = await apiClient.get<ApiResponse<import('../types/api.types').PageResponse<import('../types/product.types').ProductSummary>>>('/api/v1/products', {
+      params,
+    });
+    return response.data.data;
+  },
 };

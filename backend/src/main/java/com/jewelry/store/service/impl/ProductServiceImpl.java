@@ -20,6 +20,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.jewelry.store.dto.common.PageResponse;
+import com.jewelry.store.dto.request.ProductFilterRequest;
+import com.jewelry.store.dto.response.ProductSummaryResponse;
+import com.jewelry.store.specification.ProductSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 import java.util.List;
 
 @Slf4j
@@ -167,6 +176,36 @@ public class ProductServiceImpl implements ProductService {
         product.setVariants(variants);
 
         return productMapper.toProductDetailResponse(product);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<ProductSummaryResponse> filterProducts(ProductFilterRequest filterRequest) {
+        String sortBy = filterRequest.getSortBy();
+        String sortDir = filterRequest.getSortDirection();
+
+        Sort sort;
+        if ("name".equalsIgnoreCase(sortBy)) {
+            sort = "asc".equalsIgnoreCase(sortDir) ? Sort.by("name").ascending() : Sort.by("name").descending();
+        } else {
+            sort = "asc".equalsIgnoreCase(sortDir) ? Sort.by("createdAt").ascending() : Sort.by("createdAt").descending();
+        }
+
+        Pageable pageable = PageRequest.of(filterRequest.getPage(), filterRequest.getSize(), sort);
+        ProductSpecification spec = new ProductSpecification(filterRequest);
+
+        Page<Product> page = productRepository.findAll(spec, pageable);
+        List<ProductSummaryResponse> summaries = productMapper.toProductSummaryResponseList(page.getContent());
+
+        return PageResponse.<ProductSummaryResponse>builder()
+                .content(summaries)
+                .page(page.getNumber())
+                .size(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .first(page.isFirst())
+                .last(page.isLast())
+                .build();
     }
 
     private String generateUniqueSlug(String name, Long currentProductId) {
