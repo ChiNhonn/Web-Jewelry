@@ -23,4 +23,21 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUsername(String username);
 
     long countByCreatedAtGreaterThanEqual(java.time.LocalDateTime date);
+
+    @Query(value = "SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles r " +
+            "WHERE (:keyword IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND (:status IS NULL OR u.status = :status) " +
+            "AND (:role IS NULL OR r.name = :role)",
+            countQuery = "SELECT COUNT(DISTINCT u) FROM User u LEFT JOIN u.roles r " +
+            "WHERE (:keyword IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND (:status IS NULL OR u.status = :status) " +
+            "AND (:role IS NULL OR r.name = :role)")
+    org.springframework.data.domain.Page<User> findAllUsersWithFilter(
+            @Param("keyword") String keyword,
+            @Param("status") com.jewelry.store.entity.enums.UserStatus status,
+            @Param("role") com.jewelry.store.entity.enums.RoleType role,
+            org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles r LEFT JOIN FETCH u.addresses WHERE u.id = :id")
+    Optional<User> findDetailByIdWithRolesAndAddresses(@Param("id") Long id);
 }

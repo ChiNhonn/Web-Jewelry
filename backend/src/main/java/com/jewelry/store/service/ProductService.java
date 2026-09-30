@@ -16,6 +16,16 @@ public interface ProductService {
 
     ProductDetailResponse getProductDetailById(Long id);
 
+    ProductDetailResponse addVariant(Long productId, com.jewelry.store.dto.request.CreateProductVariantRequest request);
+
+    ProductDetailResponse updateVariant(Long productId, Long variantId, com.jewelry.store.dto.request.UpdateVariantRequest request);
+
+    void deleteVariant(Long productId, Long variantId);
+
+    ProductDetailResponse addProductImage(Long productId, com.jewelry.store.dto.request.CreateProductImageRequest request);
+
+    void deleteProductImage(Long productId, Long imageId);
+
     com.jewelry.store.dto.common.PageResponse<com.jewelry.store.dto.response.ProductSummaryResponse> filterProducts(
             com.jewelry.store.dto.request.ProductFilterRequest filterRequest);
 }

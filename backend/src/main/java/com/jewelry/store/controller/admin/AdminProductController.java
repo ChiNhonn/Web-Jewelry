@@ -49,6 +49,69 @@ public class AdminProductController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @GetMapping
+    @Operation(summary = "List all products for admin", description = "Lấy danh sách tất cả sản phẩm kèm phân trang và tìm kiếm theo từ khóa")
+    public ResponseEntity<ApiResponse<com.jewelry.store.dto.common.PageResponse<com.jewelry.store.dto.response.ProductSummaryResponse>>> getAllProducts(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        com.jewelry.store.dto.request.ProductFilterRequest filter = com.jewelry.store.dto.request.ProductFilterRequest.builder()
+                .keyword(keyword)
+                .categoryId(categoryId)
+                .page(page)
+                .size(size)
+                .build();
+        var response = productService.filterProducts(filter);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/{id}/variants")
+    @Operation(summary = "Add variant to product", description = "Thêm biến thể kích thước/chất liệu mới vào sản phẩm đã có")
+    public ResponseEntity<ApiResponse<ProductDetailResponse>> addVariant(
+            @PathVariable Long id,
+            @Valid @RequestBody com.jewelry.store.dto.request.CreateProductVariantRequest request) {
+        ProductDetailResponse response = productService.addVariant(id, request);
+        return new ResponseEntity<>(ApiResponse.success("Thêm biến thể thành công!", response), HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{id}/variants/{variantId}")
+    @Operation(summary = "Update variant details", description = "Cập nhật giá bán, chất liệu, size của biến thể")
+    public ResponseEntity<ApiResponse<ProductDetailResponse>> updateVariant(
+            @PathVariable Long id,
+            @PathVariable Long variantId,
+            @Valid @RequestBody com.jewelry.store.dto.request.UpdateVariantRequest request) {
+        ProductDetailResponse response = productService.updateVariant(id, variantId, request);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật biến thể thành công!", response));
+    }
+
+    @DeleteMapping("/{id}/variants/{variantId}")
+    @Operation(summary = "Deactivate variant", description = "Vô hiệu hóa biến thể của sản phẩm")
+    public ResponseEntity<ApiResponse<Void>> deleteVariant(
+            @PathVariable Long id,
+            @PathVariable Long variantId) {
+        productService.deleteVariant(id, variantId);
+        return ResponseEntity.ok(ApiResponse.empty("Đã vô hiệu hóa biến thể thành công!"));
+    }
+
+    @PostMapping("/{id}/images")
+    @Operation(summary = "Add product image", description = "Thêm ảnh mới vào bộ sưu tập ảnh của sản phẩm")
+    public ResponseEntity<ApiResponse<ProductDetailResponse>> addProductImage(
+            @PathVariable Long id,
+            @Valid @RequestBody com.jewelry.store.dto.request.CreateProductImageRequest request) {
+        ProductDetailResponse response = productService.addProductImage(id, request);
+        return new ResponseEntity<>(ApiResponse.success("Thêm ảnh sản phẩm thành công!", response), HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/{id}/images/{imageId}")
+    @Operation(summary = "Delete product image", description = "Xóa ảnh khỏi sản phẩm")
+    public ResponseEntity<ApiResponse<Void>> deleteProductImage(
+            @PathVariable Long id,
+            @PathVariable Long imageId) {
+        productService.deleteProductImage(id, imageId);
+        return ResponseEntity.ok(ApiResponse.empty("Đã xóa ảnh thành công!"));
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Deactivate/Soft-delete product", description = "Chuyển trạng thái sản phẩm sang INACTIVE")
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long id) {

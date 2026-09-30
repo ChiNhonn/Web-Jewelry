@@ -87,4 +87,11 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
 
     @Query("SELECT o FROM Order o LEFT JOIN FETCH o.user u LEFT JOIN FETCH o.orderItems oi ORDER BY o.createdAt DESC")
     java.util.List<Order> findRecentOrders(Pageable pageable);
+
+    long countByUserId(Long userId);
+
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.user.id = :userId AND o.orderStatus IN :statuses")
+    java.math.BigDecimal sumTotalSpentByUserId(
+            @Param("userId") Long userId,
+            @Param("statuses") java.util.List<OrderStatus> statuses);
 }

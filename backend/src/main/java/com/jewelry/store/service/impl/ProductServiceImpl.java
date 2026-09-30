@@ -39,6 +39,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductVariantRepository variantRepository;
+    private final com.jewelry.store.repository.ProductImageRepository productImageRepository;
     private final ProductMapper productMapper;
 
     @Override
@@ -220,5 +221,113 @@ public class ProductServiceImpl implements ProductService {
             }
             candidateSlug = baseSlug + "-" + counter++;
         }
+    }
+
+    @Override
+    @Transactional
+    public ProductDetailResponse addVariant(Long productId, CreateProductVariantRequest request) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
+
+        if (variantRepository.existsBySku(request.getSku())) {
+            throw new BadRequestException("Mã SKU biến thể '" + request.getSku() + "' đã tồn tại.");
+        }
+
+        ProductVariant variant = ProductVariant.builder()
+                .product(product)
+                .sku(request.getSku().trim().toUpperCase())
+                .sizeOption(request.getSizeOption())
+                .materialType(request.getMaterialType())
+                .originalPrice(request.getOriginalPrice())
+                .salePrice(request.getSalePrice())
+                .status(request.getStatus() != null ? request.getStatus() : ProductStatus.ACTIVE)
+                .build();
+
+        Inventory inventory = Inventory.builder()
+                .quantity(request.getInitialStock() != null ? request.getInitialStock() : 0)
+                .reservedQuantity(0)
+                .lowStockThreshold(request.getLowStockThreshold() != null ? request.getLowStockThreshold() : 5)
+                .version(0L)
+                .build();
+
+        variant.setInventory(inventory);
+        variantRepository.save(variant);
+
+        return getProductDetailById(productId);
+    }
+
+    @Override
+    @Transactional
+    public ProductDetailResponse updateVariant(Long productId, Long variantId, com.jewelry.store.dto.request.UpdateVariantRequest request) {
+        ProductVariant variant = variantRepository.findById(variantId)
+                .orElseThrow(() -> new ResourceNotFoundException("ProductVariant", "id", variantId));
+
+        if (!variant.getProduct().getId().equals(productId)) {
+            throw new BadRequestException("Biến thể ID " + variantId + " không thuộc về sản phẩm ID " + productId);
+        }
+
+        if (request.getSizeOption() != null) variant.setSizeOption(request.getSizeOption());
+        if (request.getMaterialType() != null) variant.setMaterialType(request.getMaterialType());
+        if (request.getOriginalPrice() != null) variant.setOriginalPrice(request.getOriginalPrice());
+        if (request.getSalePrice() != null) variant.setSalePrice(request.getSalePrice());
+        if (request.getStatus() != null) variant.setStatus(request.getStatus());
+
+        variantRepository.save(variant);
+        return getProductDetailById(productId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteVariant(Long productId, Long variantId) {
+        ProductVariant variant = variantRepository.findById(variantId)
+                .orElseThrow(() -> new ResourceNotFoundException("ProductVariant", "id", variantId));
+
+        if (!variant.getProduct().getId().equals(productId)) {
+            throw new BadRequestException("Biến thể ID " + variantId + " không thuộc về sản phẩm ID " + productId);
+        }
+
+        variant.setStatus(ProductStatus.INACTIVE);
+        variantRepository.save(variant);
+    }
+
+    @Override
+    @Transactional
+    public ProductDetailResponse addProductImage(Long productId, CreateProductImageRequest request) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
+
+        if (request.isThumbnail()) {
+            List<ProductImage> existingImages = productImageRepository.findByProductIdOrderBySortOrderAsc(productId);
+            for (ProductImage img : existingImages) {
+                if (img.isThumbnail()) {
+                    img.setThumbnail(false);
+                    productImageRepository.save(img);
+                }
+            }
+        }
+
+        ProductImage image = ProductImage.builder()
+                .product(product)
+                .imageUrl(request.getImageUrl())
+                .publicId(request.getPublicId())
+                .isThumbnail(request.isThumbnail())
+                .sortOrder(request.getSortOrder())
+                .build();
+
+        productImageRepository.save(image);
+        return getProductDetailById(productId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteProductImage(Long productId, Long imageId) {
+        ProductImage image = productImageRepository.findById(imageId)
+                .orElseThrow(() -> new ResourceNotFoundException("ProductImage", "id", imageId));
+
+        if (!image.getProduct().getId().equals(productId)) {
+            throw new BadRequestException("Ảnh ID " + imageId + " không thuộc về sản phẩm ID " + productId);
+        }
+
+        productImageRepository.delete(image);
     }
 }

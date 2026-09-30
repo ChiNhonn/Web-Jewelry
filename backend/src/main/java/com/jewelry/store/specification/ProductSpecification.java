@@ -39,8 +39,11 @@ public class ProductSpecification implements Specification<Product> {
             predicates.add(cb.or(namePredicate, skuPredicate, descPredicate));
         }
 
-        // 2. Lọc theo danh mục sản phẩm (Category Slug)
-        if (filter.getCategorySlug() != null && !filter.getCategorySlug().isBlank()) {
+        // 2. Lọc theo danh mục sản phẩm (Category ID hoặc Slug)
+        if (filter.getCategoryId() != null) {
+            Join<Product, Category> categoryJoin = root.join("category", JoinType.INNER);
+            predicates.add(cb.equal(categoryJoin.get("id"), filter.getCategoryId()));
+        } else if (filter.getCategorySlug() != null && !filter.getCategorySlug().isBlank()) {
             Join<Product, Category> categoryJoin = root.join("category", JoinType.INNER);
             predicates.add(cb.equal(categoryJoin.get("slug"), filter.getCategorySlug().trim()));
         }
