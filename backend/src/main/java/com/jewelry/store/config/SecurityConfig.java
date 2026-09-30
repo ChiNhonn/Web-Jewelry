@@ -67,7 +67,8 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler)
                 )
                 .authorizeHttpRequests(authorize -> authorize
-                        // Public Authentication & Health Check endpoints
+                        // Authentication endpoints (/me requires authentication, others are public)
+                        .requestMatchers("/api/v1/auth/me").authenticated()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/health/**").permitAll()
 
