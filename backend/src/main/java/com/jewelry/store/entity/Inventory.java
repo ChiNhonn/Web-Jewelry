@@ -60,4 +60,21 @@ public class Inventory {
     public int getAvailableQuantity() {
         return Math.max(0, quantity - reservedQuantity);
     }
+
+    public void deductStock(int amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Số lượng trừ kho phải lớn hơn 0");
+        }
+        if (getAvailableQuantity() < amount) {
+            throw new IllegalStateException("Số lượng tồn kho không đủ để xuất hàng (Hiện còn: " + getAvailableQuantity() + ")");
+        }
+        this.quantity -= amount;
+    }
+
+    public void restoreStock(int amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Số lượng hoàn kho phải lớn hơn 0");
+        }
+        this.quantity += amount;
+    }
 }

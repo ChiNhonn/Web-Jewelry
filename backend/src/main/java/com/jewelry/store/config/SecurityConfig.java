@@ -72,8 +72,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/health/**").permitAll()
 
-                        // Public Catalog endpoints (Allow browsing without login)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**", "/api/v1/categories/**").permitAll()
+                        // Public Catalog & Coupon endpoints (Allow browsing without login)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/coupons/**").permitAll()
 
                         // Public Swagger & Actuator endpoints
                         .requestMatchers(
