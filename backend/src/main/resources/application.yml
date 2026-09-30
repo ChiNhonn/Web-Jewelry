@@ -47,3 +47,9 @@ payment:
     account-no: ${VIETQR_ACCOUNT_NO:0987654321}
     account-name: ${VIETQR_ACCOUNT_NAME:AURA FINE JEWELRY}
 
+# File Upload Configuration
+file:
+  upload-dir: ${FILE_UPLOAD_DIR:uploads}
+
+
+

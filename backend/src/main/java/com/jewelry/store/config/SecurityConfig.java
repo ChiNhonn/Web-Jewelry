@@ -72,8 +72,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/health/**").permitAll()
 
-                        // Public Catalog, Coupon & Payment callback endpoints
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/coupons/**").permitAll()
+                        // Public Catalog, Coupon, Media & Payment callback endpoints
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/coupons/**", "/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/payments/vnpay-return", "/api/v1/payments/vnpay-ipn").permitAll()
 
                         // Public Swagger & Actuator endpoints
