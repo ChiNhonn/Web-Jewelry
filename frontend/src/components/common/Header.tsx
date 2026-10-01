@@ -1,102 +1,128 @@
-import React from 'react';
-import { Gem, ShoppingBag, Heart, User, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShoppingBag, Search, Calendar, ChevronRight } from 'lucide-react';
 
 export const Header: React.FC = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 40) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <header style={{
-      borderBottom: '1px solid var(--color-border)',
-      backgroundColor: 'rgba(18, 20, 24, 0.95)',
-      backdropFilter: 'blur(10px)',
-      position: 'sticky',
+      position: 'fixed',
       top: 0,
-      zIndex: 100,
+      left: 0,
+      right: 0,
+      zIndex: 1000,
+      transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+      backgroundColor: isScrolled ? 'rgba(5, 5, 8, 0.85)' : 'rgba(5, 5, 8, 0.4)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      borderBottom: isScrolled ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(255, 255, 255, 0.03)',
+      padding: isScrolled ? '14px 0' : '20px 0',
     }}>
-      {/* Top promotional bar */}
-      <div style={{
-        backgroundColor: '#07080A',
-        padding: '6px 0',
-        fontSize: '0.75rem',
-        textAlign: 'center',
-        color: 'var(--color-gold-400)',
-        letterSpacing: '0.12em',
-        textTransform: 'uppercase',
-        borderBottom: '1px solid rgba(212, 175, 55, 0.15)'
-      }}>
-        ✨ Miễn phí vận chuyển toàn quốc cho đơn hàng từ 10.000.000đ • Chứng nhận kiểm định GIA
-      </div>
-
       <div className="container" style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: '16px',
-        paddingBottom: '16px',
       }}>
-        {/* Brand Logo */}
-        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #D4AF37, #8C6D18)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#0B0C0E',
-            boxShadow: 'var(--shadow-gold)'
+        {/* Brand Logo matching the reference picture style: LOGO • */}
+        <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{
+            fontSize: '1.25rem',
+            fontWeight: 800,
+            letterSpacing: '0.12em',
+            color: '#FFFFFF',
+            textTransform: 'uppercase',
           }}>
-            <Gem size={20} />
-          </div>
-          <div>
-            <span className="heading-serif gold-gradient-text" style={{ fontSize: '1.4rem', fontWeight: 700, letterSpacing: '0.15em' }}>
-              AURA
-            </span>
-            <span style={{ display: 'block', fontSize: '0.62rem', letterSpacing: '0.3em', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
-              Fine Jewelry
-            </span>
-          </div>
+            AURAJEWELRY
+          </span>
+          <span style={{
+            width: '7px',
+            height: '7px',
+            borderRadius: '50%',
+            backgroundColor: '#ff6584',
+            boxShadow: '0 0 12px #ff6584',
+            display: 'inline-block',
+          }} />
         </a>
 
-        {/* Navigation Categories */}
-        <nav style={{ display: 'flex', gap: '28px', fontSize: '0.85rem', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-          <a href="#nhan" style={{ color: 'var(--color-text-primary)' }} className="nav-link">Nhẫn Kim Cương</a>
-          <a href="#day-chuyen" style={{ color: 'var(--color-text-secondary)' }} className="nav-link">Dây Chuyền</a>
-          <a href="#vong-tay" style={{ color: 'var(--color-text-secondary)' }} className="nav-link">Vòng Tay & Lắc</a>
-          <a href="#bong-tai" style={{ color: 'var(--color-text-secondary)' }} className="nav-link">Bông Tai</a>
-          <a href="#bo-suu-tap" style={{ color: 'var(--color-gold-400)' }} className="nav-link">Bộ Sưu Tập 2026</a>
+        {/* Minimalist Center Navigation Links */}
+        <nav style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '32px',
+          fontSize: '0.85rem',
+          fontWeight: 500,
+          color: 'var(--color-text-secondary)',
+        }}>
+          <a href="#danh-muc" style={{ transition: 'color 0.2s ease' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#FFFFFF')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}>
+            Danh mục
+          </a>
+          <a href="#quy-trinh" style={{ transition: 'color 0.2s ease' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#FFFFFF')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}>
+            Quy trình
+          </a>
+          <a href="#giai-phap" style={{ transition: 'color 0.2s ease' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#FFFFFF')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}>
+            Giải pháp
+          </a>
+          <a href="#tuyet-tac" style={{ transition: 'color 0.2s ease' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#FFFFFF')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}>
+            Tuyệt tác
+          </a>
+          <a href="#cam-ket" style={{ transition: 'color 0.2s ease' }} onMouseEnter={(e) => (e.currentTarget.style.color = '#FFFFFF')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}>
+            Cam kết
+          </a>
         </nav>
 
-        {/* Actions Icons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-          <button title="Tìm kiếm" style={{ color: 'var(--color-text-secondary)', display: 'flex' }}>
-            <Search size={20} />
-          </button>
-          <button title="Yêu thích" style={{ color: 'var(--color-text-secondary)', display: 'flex' }}>
-            <Heart size={20} />
-          </button>
-          <button title="Giỏ hàng" style={{ color: 'var(--color-gold-400)', display: 'flex', position: 'relative' }}>
-            <ShoppingBag size={20} />
-            <span style={{
-              position: 'absolute',
-              top: '-6px',
-              right: '-8px',
-              backgroundColor: 'var(--color-gold-500)',
-              color: '#0B0C0E',
-              fontSize: '0.65rem',
-              fontWeight: 700,
-              width: '16px',
-              height: '16px',
-              borderRadius: '50%',
+        {/* Right CTA Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <button
+            title="Tìm kiếm"
+            style={{
+              color: 'var(--color-text-secondary)',
               display: 'flex',
+              padding: '6px',
+              borderRadius: '50%',
+              transition: 'color 0.2s ease',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#FFFFFF')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+          >
+            <Search size={18} />
+          </button>
+
+          <a
+            href="#gio-hang"
+            style={{
+              color: 'var(--color-text-secondary)',
+              fontSize: '0.85rem',
+              display: 'inline-flex',
               alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              0
-            </span>
-          </button>
-          <button title="Tài khoản" style={{ color: 'var(--color-text-secondary)', display: 'flex' }}>
-            <User size={20} />
-          </button>
+              gap: '6px',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#FFFFFF')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+          >
+            <ShoppingBag size={18} />
+            <span style={{ fontSize: '0.8rem' }}>Giỏ hàng</span>
+          </a>
+
+          {/* Pill Button matching reference image white pill button */}
+          <a
+            href="#tu-van"
+            className="btn-pill-white"
+            style={{ padding: '8px 20px', fontSize: '0.82rem' }}
+          >
+            <Calendar size={14} /> Tư vấn VIP <ChevronRight size={14} />
+          </a>
         </div>
       </div>
     </header>

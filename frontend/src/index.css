@@ -1,66 +1,95 @@
 /* ==========================================================================
    AURA LUXURY JEWELRY - GLOBAL DESIGN SYSTEM & TOKENS
+   Inspired by Cinematic Ultra-Dark & Luminous Sakura Luxury Aesthetics
    ========================================================================== */
 
 :root {
-  /* Color Palette - Luxury Gold & Deep Obsidian */
+  /* Ultra-Dark Backgrounds */
+  --color-bg-pure: #050508;
+  --color-bg-deep: #090a0f;
+  --color-bg-surface: #0e1017;
+  --color-bg-card: #12141c;
+  --color-bg-card-hover: #181b26;
+
+  /* Rose & Sakura Luminous Accents */
+  --color-sakura-300: #ffd1dc;
+  --color-sakura-400: #ff9bb2;
+  --color-sakura-500: #ff6584;
+  --color-sakura-glow: rgba(255, 101, 132, 0.35);
+
+  /* Gold Luxury Accents */
   --color-gold-300: #F3E5AB;
   --color-gold-400: #E6CA65;
   --color-gold-500: #D4AF37;
   --color-gold-600: #B89025;
-  --color-gold-700: #8C6D18;
+  --color-gold-glow: rgba(212, 175, 55, 0.25);
 
-  --color-bg-deep: #0B0C0E;
-  --color-bg-surface: #121418;
-  --color-bg-card: #181B21;
-  --color-bg-card-hover: #21252D;
+  /* Borders & Dividers */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-hover: rgba(255, 255, 255, 0.2);
+  --color-border-gold: rgba(212, 175, 55, 0.3);
+  --color-border-sakura: rgba(255, 101, 132, 0.3);
 
-  --color-border: #282C35;
-  --color-border-gold: rgba(212, 175, 55, 0.35);
-
-  --color-text-primary: #F9FAFB;
-  --color-text-secondary: #9CA3AF;
-  --color-text-muted: #6B7280;
+  /* Text & Typography */
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #9ea3b0;
+  --color-text-muted: #5e6473;
   --color-text-gold: #E6CA65;
+  --color-text-sakura: #ff9bb2;
 
+  /* System Feedback */
   --color-success: #10B981;
   --color-error: #EF4444;
   --color-warning: #F59E0B;
 
-  /* Typography */
+  /* Fonts */
   --font-serif: 'Cinzel', serif, Georgia;
   --font-sans: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  /* Shadows & Glassmorphism */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.6);
-  --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.2);
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.8);
+  --shadow-sakura: 0 0 35px rgba(255, 101, 132, 0.35);
+  --shadow-gold: 0 0 30px rgba(212, 175, 55, 0.25);
 
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 14px;
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
   --radius-full: 9999px;
 
-  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Transitions */
+  --transition-smooth: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* CSS Reset & Defaults */
+/* CSS Reset */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: var(--font-sans);
-  background-color: var(--color-bg-deep);
+  background-color: var(--color-bg-pure);
   color: var(--color-text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   overflow-x: hidden;
+  selection-background-color: var(--color-sakura-500);
+  selection-color: #FFFFFF;
+}
+
+::selection {
+  background: rgba(255, 101, 132, 0.3);
+  color: #FFFFFF;
 }
 
 a {
@@ -78,101 +107,189 @@ button {
   transition: var(--transition-smooth);
 }
 
-input, select, textarea {
-  font-family: var(--font-sans);
-  outline: none;
-}
-
-/* Luxury Container */
+/* Container */
 .container {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1320px;
   margin-left: auto;
   margin-right: auto;
-  padding-left: 24px;
-  padding-right: 24px;
+  padding-left: 28px;
+  padding-right: 28px;
 }
 
 /* Typography Utilities */
 .heading-serif {
   font-family: var(--font-serif);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .gold-gradient-text {
-  background: linear-gradient(135deg, #F3E5AB 0%, #D4AF37 50%, #AA7C11 100%);
+  background: linear-gradient(135deg, #FFF6D6 0%, #D4AF37 55%, #AA7C11 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-/* Buttons */
-.btn-gold {
-  background: linear-gradient(135deg, #D4AF37 0%, #B89025 100%);
-  color: #0B0C0E;
+.sakura-gradient-text {
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFB6C1 50%, #FF6584 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Pill Buttons */
+.btn-pill-white {
+  background: #FFFFFF;
+  color: #050508;
   font-weight: 600;
-  padding: 12px 28px;
-  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  padding: 10px 24px;
+  border-radius: var(--radius-full);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  box-shadow: var(--shadow-gold);
+  transition: var(--transition-smooth);
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
 }
 
-.btn-gold:hover {
-  background: linear-gradient(135deg, #E6CA65 0%, #D4AF37 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(212, 175, 55, 0.35);
+.btn-pill-white:hover {
+  background: #f0f0f5;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 30px rgba(255, 255, 255, 0.35);
 }
 
-.btn-outline-gold {
-  border: 1px solid var(--color-gold-500);
-  color: var(--color-gold-400);
-  font-weight: 500;
-  padding: 11px 26px;
-  border-radius: var(--radius-sm);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  background: rgba(212, 175, 55, 0.03);
-}
-
-.btn-outline-gold:hover {
-  background: rgba(212, 175, 55, 0.12);
-  border-color: var(--color-gold-400);
+.btn-pill-sakura {
+  background: linear-gradient(135deg, #ff6584 0%, #d43f66 100%);
   color: #FFFFFF;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 12px 30px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-sakura);
+}
+
+.btn-pill-sakura:hover {
+  background: linear-gradient(135deg, #ff7a98 0%, #e04b73 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 0 45px rgba(255, 101, 132, 0.55);
+}
+
+.btn-outline-pill {
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-weight: 500;
+  font-size: 0.88rem;
+  padding: 11px 28px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  transition: var(--transition-smooth);
+}
+
+.btn-outline-pill:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.08);
   transform: translateY(-2px);
 }
 
 /* Card Styles */
-.luxury-card {
-  background-color: var(--color-bg-card);
+.luxury-glass-card {
+  background: rgba(18, 20, 28, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 24px;
+  padding: 28px;
   transition: var(--transition-smooth);
 }
 
-.luxury-card:hover {
-  border-color: var(--color-border-gold);
-  background-color: var(--color-bg-card-hover);
-  box-shadow: var(--shadow-lg);
+.luxury-glass-card:hover {
+  border-color: rgba(255, 101, 132, 0.35);
+  background: rgba(24, 27, 38, 0.85);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7), 0 0 30px rgba(255, 101, 132, 0.15);
+  transform: translateY(-4px);
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Scroll Reveal System */
+.reveal {
+  opacity: 0;
+  transform: translateY(45px);
+  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.6s ease-out forwards;
+.reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.92) translateY(30px);
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-scale.is-revealed {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.delay-100 { transition-delay: 0.1s; }
+.delay-200 { transition-delay: 0.2s; }
+.delay-300 { transition-delay: 0.3s; }
+.delay-400 { transition-delay: 0.4s; }
+.delay-500 { transition-delay: 0.5s; }
+
+/* Subtle floating glowing petal */
+@keyframes floatPetal {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(140px) translateX(-50px) rotate(270deg);
+    opacity: 0;
+  }
+}
+
+.floating-petal {
+  position: absolute;
+  pointer-events: none;
+  background: radial-gradient(circle, #ff9bb2 20%, #ff6584 80%);
+  border-radius: 50% 0 50% 50%;
+  filter: blur(1px);
+  animation: floatPetal 8s infinite linear;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050508;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #252836;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff6584;
 }
