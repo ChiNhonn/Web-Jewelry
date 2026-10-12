@@ -1,0 +1,34 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Dark Background -->
+    <path
+        android:fillColor="#050508"
+        android:pathData="M0,0h108v108h-108z" />
+    <!-- Gold Diamond Facets -->
+    <path
+        android:fillColor="#D4AF37"
+        android:pathData="M54,24 L78,44 L54,84 L30,44 Z" />
+    <!-- Top Crown Highlight -->
+    <path
+        android:fillColor="#F9E29D"
+        android:pathData="M54,24 L64,44 L44,44 Z" />
+    <!-- Left Top Facet -->
+    <path
+        android:fillColor="#AA771C"
+        android:pathData="M30,44 L44,44 L54,24 Z" />
+    <!-- Right Top Facet -->
+    <path
+        android:fillColor="#AA771C"
+        android:pathData="M78,44 L64,44 L54,24 Z" />
+    <!-- Bottom Facet Center -->
+    <path
+        android:fillColor="#F9E29D"
+        android:pathData="M44,44 L64,44 L54,84 Z" />
+    <!-- Center Glimmer Accent (Sakura Glow) -->
+    <path
+        android:fillColor="#FF6584"
+        android:pathData="M54,42 L56,46 L54,50 L52,46 Z" />
+</vector>

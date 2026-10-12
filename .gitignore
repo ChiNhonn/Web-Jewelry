@@ -40,3 +40,15 @@ pnpm-debug.log*
 *.env
 *.env.dev
 *.env.prod
+
+
+# Android
+android/.gradle/
+android/**/build/
+android/.kotlin/
+android/.idea/
+android/local.properties
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+android/*.png

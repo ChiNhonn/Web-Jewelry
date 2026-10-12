@@ -41,6 +41,8 @@ export interface ProductSummary {
   isFeatured: boolean;
   minPrice: number;
   maxPrice: number;
+  originalPrice?: number;
+  defaultVariantId?: number;
   thumbnailUrl?: string;
   status: 'ACTIVE' | 'INACTIVE' | 'DRAFT' | 'OUT_OF_STOCK';
   createdAt: string;

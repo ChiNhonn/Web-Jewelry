@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">AURA Jewelry</string>
+    <string name="app_tagline">Haute Joaillerie &amp; Fine Diamonds</string>
+    <string name="app_subtitle">Haute Joaillerie &amp; Fine Diamonds</string>
+
+    <!-- Navigation Labels -->
+    <string name="nav_home">Home</string>
+    <string name="nav_catalog">Catalog</string>
+    <string name="nav_wishlist">Wishlist</string>
+    <string name="nav_cart">Cart</string>
+    <string name="nav_profile">Account</string>
+
+    <!-- Common Actions -->
+    <string name="action_login">Sign In</string>
+    <string name="action_register">Sign Up</string>
+    <string name="action_logout">Sign Out</string>
+    <string name="action_add_to_cart">Add to Bag</string>
+    <string name="action_buy_now">Buy Now</string>
+    <string name="action_checkout">Proceed to Checkout</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_cancel_order">Cancel Order</string>
+    <string name="action_apply_coupon">Apply</string>
+
+    <!-- Statuses -->
+    <string name="status_in_stock">In Stock</string>
+    <string name="status_low_stock">Limited Quantity</string>
+    <string name="status_out_of_stock">Out of Stock</string>
+
+    <!-- Errors -->
+    <string name="error_no_internet">No Internet connection. Please check your network.</string>
+    <string name="error_timeout">Connection timed out. Please try again.</string>
+    <string name="error_unauthorized">Session expired. Please sign in again.</string>
+    <string name="error_general">An unexpected error occurred. Please try again later.</string>
+</resources>

@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # 1. Database Service: MySQL 8.0 Enterprise Relational Store
+  mysql:
+    image: mysql:8.0
+    container_name: aura-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-123456}
+      MYSQL_DATABASE: ${DB_NAME:-jewelry_db}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - aura-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-123456}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # 2. Backend Service: Spring Boot 3.3.4 (Java 21) RESTful Microservice
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aura-backend
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-jewelry_db}
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-123456}
+      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      VNPAY_TMN_CODE: ${VNPAY_TMN_CODE:-DEMOTMN1}
+      VNPAY_HASH_SECRET: ${VNPAY_HASH_SECRET:-RAOCTPGSQZCBCENTDWSQIUZAHXIZZQXX}
+      VNPAY_PAY_URL: ${VNPAY_PAY_URL:-https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+      VNPAY_RETURN_URL: ${VNPAY_RETURN_URL:-http://localhost:5173/payment/vnpay-return}
+    ports:
+      - "8080:8080"
+    networks:
+      - aura-network
+
+  # 3. Frontend Service: React 18 + Vite + Nginx Reverse Proxy
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: aura-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - aura-network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  aura-network:
+    driver: bridge

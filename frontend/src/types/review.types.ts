@@ -22,7 +22,7 @@ export interface ProductRatingSummary {
 }
 
 export interface CreateReviewRequest {
-  orderId: number;
+  orderId?: number;
   rating: number;
   comment?: string;
   imageUrls?: string[];

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="auraGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F9E29D" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#AA771C" />
+    </linearGradient>
+    <linearGradient id="sakuraGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFAFC0" />
+      <stop offset="100%" stop-color="#FF6584" />
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="22" fill="#050508"/>
+  <polygon points="50,15 82,38 70,82 30,82 18,38" fill="none" stroke="url(#auraGold)" stroke-width="3.5" stroke-linejoin="round"/>
+  <polygon points="50,15 70,38 50,60 30,38" fill="none" stroke="url(#sakuraGlow)" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="50" cy="50" r="4" fill="url(#sakuraGlow)"/>
+</svg>

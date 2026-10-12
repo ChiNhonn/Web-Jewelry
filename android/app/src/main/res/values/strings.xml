@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">AURA Jewelry</string>
+    <string name="app_tagline">Tuyệt Tác Trang Sức Xa Xỉ</string>
+    <string name="app_subtitle">Tuyệt Tác Trang Sức &amp; Kim Cương</string>
+
+    <!-- Navigation Labels -->
+    <string name="nav_home">Trang Chủ</string>
+    <string name="nav_catalog">Bộ Sưu Tập</string>
+    <string name="nav_wishlist">Yêu Thích</string>
+    <string name="nav_cart">Túi Đồ</string>
+    <string name="nav_profile">Tài Khoản</string>
+
+    <!-- Common Actions -->
+    <string name="action_login">Đăng Nhập</string>
+    <string name="action_register">Đăng Ký</string>
+    <string name="action_logout">Đăng Xuất</string>
+    <string name="action_add_to_cart">Thêm Vào Túi</string>
+    <string name="action_buy_now">Mua Ngay</string>
+    <string name="action_checkout">Tiến Hành Đặt Hàng</string>
+    <string name="action_retry">Thử Lại</string>
+    <string name="action_cancel_order">Hủy Đơn Hàng</string>
+    <string name="action_apply_coupon">Áp Dụng</string>
+
+    <!-- Statuses -->
+    <string name="status_in_stock">Còn hàng tại xưởng</string>
+    <string name="status_low_stock">Số lượng giới hạn</string>
+    <string name="status_out_of_stock">Đã hết hàng</string>
+
+    <!-- Errors -->
+    <string name="error_no_internet">Không có kết nối Internet. Vui lòng kiểm tra lại đường truyền.</string>
+    <string name="error_timeout">Kết nối đến máy chủ bị quá thời gian. Vui lòng thử lại.</string>
+    <string name="error_unauthorized">Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.</string>
+    <string name="error_general">Đã có lỗi xảy ra. Quý khách vui lòng thử lại sau.</string>
+</resources>

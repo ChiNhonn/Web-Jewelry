@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { healthService } from '../services/healthService';
 import { HealthStatus } from '../types/api.types';
 import { useScrollReveal } from '../hooks/useScrollReveal';
@@ -123,9 +124,9 @@ export const HomePage: React.FC = () => {
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '70px' }}>
-              <a href="#danh-muc" className="btn-pill-sakura">
+              <Link to="/products" className="btn-pill-sakura">
                 Khám phá bộ sưu tập <ArrowRight size={16} />
-              </a>
+              </Link>
               <a href="#quy-trinh" className="btn-outline-pill">
                 Quy trình chế tác
               </a>
@@ -320,9 +321,9 @@ export const HomePage: React.FC = () => {
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
                 <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>42 mẫu ni nhẫn sẵn có</span>
-                <a href="#chi-tiet" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-sakura-300)' }}>
+                <Link to="/products/nhan-solitaire-diamond-2ct" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-sakura-300)' }}>
                   Xem tác phẩm <ChevronRight size={14} />
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -385,9 +386,9 @@ export const HomePage: React.FC = () => {
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
                 <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>Chiều dài 42cm - 45cm</span>
-                <a href="#chi-tiet" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-sakura-300)' }}>
+                <Link to="/products/day-chuyen-royal-crown" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-sakura-300)' }}>
                   Xem tác phẩm <ChevronRight size={14} />
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -450,9 +451,9 @@ export const HomePage: React.FC = () => {
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
                 <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>Bản giới hạn 18 chiếc</span>
-                <a href="#chi-tiet" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-sakura-300)' }}>
+                <Link to="/products/vong-tay-tennis-diamond-5ct" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-sakura-300)' }}>
                   Xem tác phẩm <ChevronRight size={14} />
-                </a>
+                </Link>
               </div>
             </div>
           </div>
