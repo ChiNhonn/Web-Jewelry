@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,6 +24,10 @@ public class ProductDetailResponse {
     private String description;
     private String shortDescription;
     private String materialOverview;
+    private BigDecimal weightGrams;
+    private String stoneType;
+    private String clarity;
+    private String warranty;
     private String brand;
     private boolean isFeatured;
     private ProductStatus status;

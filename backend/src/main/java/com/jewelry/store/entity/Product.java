@@ -4,6 +4,7 @@ import com.jewelry.store.entity.enums.ProductStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,7 +50,19 @@ public class Product extends BaseAuditableEntity {
     private String shortDescription;
 
     @Column(name = "material_overview", length = 150)
-    private String materialOverview; // VD: Vàng 18K, Kim cương tự nhiên GIA
+    private String materialOverview;
+
+    @Column(name = "weight_grams", precision = 8, scale = 2)
+    private BigDecimal weightGrams;
+
+    @Column(name = "stone_type", length = 100)
+    private String stoneType;
+
+    @Column(name = "clarity", length = 80)
+    private String clarity;
+
+    @Column(name = "warranty", length = 200)
+    private String warranty;
 
     @Column(name = "brand", length = 100)
     @Builder.Default

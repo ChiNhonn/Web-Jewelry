@@ -27,11 +27,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query(value = "SELECT DISTINCT u FROM User u LEFT JOIN FETCH u.roles r " +
             "WHERE (:keyword IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "AND (:status IS NULL OR u.status = :status) " +
-            "AND (:role IS NULL OR r.name = :role)",
+            "AND (:role IS NULL OR r.name = :role) " +
+            "AND u.username <> 'khach-vang-lai'",
             countQuery = "SELECT COUNT(DISTINCT u) FROM User u LEFT JOIN u.roles r " +
             "WHERE (:keyword IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "AND (:status IS NULL OR u.status = :status) " +
-            "AND (:role IS NULL OR r.name = :role)")
+            "AND (:role IS NULL OR r.name = :role) " +
+            "AND u.username <> 'khach-vang-lai'")
     org.springframework.data.domain.Page<User> findAllUsersWithFilter(
             @Param("keyword") String keyword,
             @Param("status") com.jewelry.store.entity.enums.UserStatus status,

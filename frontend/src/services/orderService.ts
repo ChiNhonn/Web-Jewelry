@@ -3,6 +3,7 @@ import { ApiResponse, PageResponse } from '../types/api.types';
 import {
   CouponValidation,
   CreateOrderRequest,
+  GuestCheckoutRequest,
   Order,
   OrderStatus,
   OrderSummary,
@@ -14,6 +15,26 @@ export const orderService = {
    */
   async checkout(data: CreateOrderRequest): Promise<Order> {
     const response = await apiClient.post<ApiResponse<Order>>('/api/v1/orders', data);
+    return response.data.data;
+  },
+
+  async guestCheckout(data: GuestCheckoutRequest): Promise<Order> {
+    const response = await apiClient.post<ApiResponse<Order>>('/api/v1/orders/guest', data);
+    return response.data.data;
+  },
+
+  async abandonOrder(orderCode: string, accessToken: string): Promise<Order> {
+    const response = await apiClient.post<ApiResponse<Order>>(`/api/v1/orders/${orderCode}/abandon`, {
+      accessToken,
+    });
+    return response.data.data;
+  },
+
+  async switchToCod(orderCode: string, accessToken: string): Promise<Order> {
+    const response = await apiClient.put<ApiResponse<Order>>(`/api/v1/orders/${orderCode}/payment-method`, {
+      accessToken,
+      confirmed: true,
+    });
     return response.data.data;
   },
 

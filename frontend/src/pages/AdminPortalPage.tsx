@@ -7,6 +7,7 @@ import { adminCouponService } from '../services/adminCouponService';
 import { adminUserService } from '../services/adminUserService';
 import { DashboardOverview, LowStockAlert } from '../types/dashboard.types';
 import { InventoryItem, AdminCoupon, AdminUserSummary } from '../types/admin.types';
+import { AdminOperations } from './AdminOperations';
 import {
   ShieldCheck,
   TrendingUp,
@@ -27,7 +28,7 @@ import {
 export const AdminPortalPage: React.FC = () => {
   const { success } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'inventory' | 'coupons' | 'users'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'inventory' | 'coupons' | 'users' | 'products' | 'categories' | 'orders' | 'reviews' | 'reports'>('overview');
 
   // Overview metrics state
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
@@ -71,25 +72,8 @@ export const AdminPortalPage: React.FC = () => {
       ])
         .then(([ov, alerts]) => {
           if (ov) setOverview(ov);
-          else {
-            setOverview({
-              totalRevenue: 345000000,
-              todayRevenue: 15000000,
-              monthRevenue: 345000000,
-              revenueGrowthPercent: 18.5,
-              totalOrders: 28,
-              pendingOrders: 3,
-              shippingOrders: 4,
-              completedOrders: 21,
-              cancelledOrders: 0,
-              totalCustomers: 142,
-              newCustomersThisMonth: 12,
-              totalProducts: 24,
-              outOfStockCount: 0,
-              lowStockCount: 2,
-            });
-          }
-          if (alerts) setLowStockAlerts(alerts);
+          else setOverview(null);
+                    if (alerts) setLowStockAlerts(alerts);
         })
         .finally(() => setLoadingOverview(false));
     } else if (activeTab === 'inventory') {
@@ -97,123 +81,22 @@ export const AdminPortalPage: React.FC = () => {
       adminInventoryService
         .getInventories()
         .then((res) => setInventories(res.content))
-        .catch(() => {
-          setInventories([
-            {
-              inventoryId: 1,
-              variantId: 1001,
-              productId: 1,
-              productName: 'Nhẫn Solitaire Diamond 2.0ct',
-              productSlug: 'nhan-solitaire-diamond-2ct',
-              sku: 'AURA-RING-001-WG-12',
-              sizeOption: 'Ni 12',
-              materialType: 'Vàng trắng Ý 18K',
-              quantity: 5,
-              reservedQuantity: 1,
-              availableQuantity: 4,
-              lowStockThreshold: 3,
-              version: 1,
-              stockStatus: 'IN_STOCK',
-              updatedAt: new Date().toISOString(),
-            },
-            {
-              inventoryId: 2,
-              variantId: 1003,
-              productId: 1,
-              productName: 'Nhẫn Solitaire Diamond 2.0ct',
-              productSlug: 'nhan-solitaire-diamond-2ct',
-              sku: 'AURA-RING-001-PT-14',
-              sizeOption: 'Ni 14',
-              materialType: 'Bạch Kim Platinum 950',
-              quantity: 2,
-              reservedQuantity: 0,
-              availableQuantity: 2,
-              lowStockThreshold: 5,
-              version: 1,
-              stockStatus: 'LOW_STOCK',
-              updatedAt: new Date().toISOString(),
-            },
-          ]);
-        })
-        .finally(() => setLoadingInventory(false));
+        .catch(() => setInventories([]))
+                .finally(() => setLoadingInventory(false));
     } else if (activeTab === 'coupons') {
       setLoadingCoupons(true);
       adminCouponService
         .getAllCoupons()
         .then((res) => setCoupons(res.content))
-        .catch(() => {
-          setCoupons([
-            {
-              id: 1,
-              code: 'AURA10',
-              discountType: 'PERCENTAGE',
-              discountValue: 10,
-              minOrderValue: 5000000,
-              maxDiscount: 2000000,
-              usageLimit: 500,
-              usedCount: 42,
-              startDate: '2026-01-01',
-              endDate: '2026-12-31',
-              isActive: true,
-              isExpired: false,
-              createdAt: '2026-01-01',
-            },
-            {
-              id: 2,
-              code: 'DIAMOND500K',
-              discountType: 'FIXED_AMOUNT',
-              discountValue: 500000,
-              minOrderValue: 10000000,
-              maxDiscount: 500000,
-              usageLimit: 200,
-              usedCount: 18,
-              startDate: '2026-01-01',
-              endDate: '2026-12-31',
-              isActive: true,
-              isExpired: false,
-              createdAt: '2026-01-01',
-            },
-          ]);
-        })
-        .finally(() => setLoadingCoupons(false));
+        .catch(() => setCoupons([]))
+                .finally(() => setLoadingCoupons(false));
     } else if (activeTab === 'users') {
       setLoadingUsers(true);
       adminUserService
         .getAllUsers()
         .then((res: any) => setUsers(res.content))
-        .catch(() => {
-          setUsers([
-            {
-              id: 1,
-              username: 'admin',
-              email: 'admin@aurajewelry.com',
-              firstName: 'Quản Trị',
-              lastName: 'Viên',
-              fullName: 'Quản Trị Viên Trưởng',
-              phone: '0988 888 888',
-              status: 'ACTIVE',
-              roles: ['ROLE_ADMIN'],
-              totalOrders: 0,
-              totalSpent: 0,
-              createdAt: '2026-01-01',
-            },
-            {
-              id: 2,
-              username: 'customer',
-              email: 'khachhang@aurajewelry.com',
-              firstName: 'Văn An',
-              lastName: 'Nguyễn',
-              fullName: 'Nguyễn Văn An (VIP)',
-              phone: '0909 123 456',
-              status: 'ACTIVE',
-              roles: ['ROLE_CUSTOMER'],
-              totalOrders: 3,
-              totalSpent: 45000000,
-              createdAt: '2026-09-15',
-            },
-          ]);
-        })
-        .finally(() => setLoadingUsers(false));
+        .catch(() => setUsers([]))
+                .finally(() => setLoadingUsers(false));
     }
   }, [activeTab]);
 
@@ -341,7 +224,7 @@ export const AdminPortalPage: React.FC = () => {
               <ShieldCheck size={16} /> AURA EXECUTIVE MANAGEMENT SYSTEM
             </div>
             <h1 style={{ fontSize: '2.3rem', fontWeight: 700, color: '#FFFFFF' }}>
-              Trung Tâm Quản Trị Vận Hành CMS
+              Bảng điều khiển AURA
             </h1>
           </div>
 
@@ -364,17 +247,22 @@ export const AdminPortalPage: React.FC = () => {
           }}
         >
           {[
-            { id: 'overview', label: 'Báo Cáo Tổng Quan', icon: TrendingUp },
-            { id: 'inventory', label: 'Kho Vận & Nhập Hàng', icon: Boxes },
-            { id: 'coupons', label: 'Mã Giảm Giá & Voucher', icon: Tag },
-            { id: 'users', label: 'Kiểm Duyệt Thành Viên', icon: Users },
+            { id: 'overview', label: 'Doanh thu', icon: TrendingUp },
+            { id: 'products', label: 'Sản phẩm', icon: ShoppingBag },
+            { id: 'categories', label: 'Danh mục', icon: Tag },
+            { id: 'orders', label: 'Đơn hàng', icon: Boxes },
+            { id: 'inventory', label: 'Tồn kho', icon: Boxes },
+            { id: 'coupons', label: 'Mã giảm giá', icon: Tag },
+            { id: 'users', label: 'Khách đã đăng ký', icon: Users },
+            { id: 'reviews', label: 'Đánh giá', icon: Tag },
+            { id: 'reports', label: 'Báo cáo', icon: TrendingUp },
           ].map((tab) => {
             const Icon = tab.icon;
             const isCur = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as 'overview' | 'inventory' | 'coupons' | 'users')}
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -397,6 +285,10 @@ export const AdminPortalPage: React.FC = () => {
         </div>
 
         {/* TAB 1: EXECUTIVE OVERVIEW */}
+        {(activeTab === 'products' || activeTab === 'categories' || activeTab === 'orders' || activeTab === 'reviews' || activeTab === 'reports') && (
+          <AdminOperations tab={activeTab} />
+        )}
+
         {activeTab === 'overview' && (
           <div>
             {loadingOverview ? (
@@ -413,10 +305,10 @@ export const AdminPortalPage: React.FC = () => {
                       <DollarSign size={20} color="#D4AF37" />
                     </div>
                     <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--color-gold-400)' }}>
-                      {(overview?.totalRevenue || 345000000).toLocaleString('vi-VN')}₫
+                      {(overview?.totalRevenue || 0).toLocaleString('vi-VN')}₫
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', color: '#10B981', marginTop: '6px' }}>
-                      <ArrowUpRight size={14} /> +{overview?.revenueGrowthPercent || 18.5}% so với tháng trước
+                      <ArrowUpRight size={14} /> +{overview?.revenueGrowthPercent || 0}% so với tháng trước
                     </div>
                   </div>
 
@@ -426,7 +318,7 @@ export const AdminPortalPage: React.FC = () => {
                       <ShoppingBag size={20} color="#ff6584" />
                     </div>
                     <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#FFFFFF' }}>
-                      {overview?.totalOrders || 28}
+                      {overview?.totalOrders || 0}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', color: '#10B981', marginTop: '6px' }}>
                       <ArrowUpRight size={14} /> +12.0% tỷ lệ chuyển đổi
@@ -439,7 +331,7 @@ export const AdminPortalPage: React.FC = () => {
                       <Users size={20} color="#3B82F6" />
                     </div>
                     <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#FFFFFF' }}>
-                      {overview?.totalCustomers || 142}
+                      {overview?.totalCustomers || 0}
                     </div>
                     <div style={{ fontSize: '0.76rem', color: 'var(--color-text-muted)', marginTop: '6px' }}>
                       Hội viên Privilege Club

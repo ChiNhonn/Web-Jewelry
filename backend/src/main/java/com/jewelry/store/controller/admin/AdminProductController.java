@@ -113,9 +113,16 @@ public class AdminProductController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Deactivate/Soft-delete product", description = "Chuyển trạng thái sản phẩm sang INACTIVE")
+    @Operation(summary = "Ngừng bán sản phẩm", description = "Chuyển trạng thái sản phẩm sang INACTIVE")
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
-        return ResponseEntity.ok(ApiResponse.empty("Đã vô hiệu hóa sản phẩm thành công!"));
+        return ResponseEntity.ok(ApiResponse.empty("Đã ngừng bán sản phẩm."));
+    }
+
+    @DeleteMapping("/{id}/permanent")
+    @Operation(summary = "Xóa hẳn sản phẩm", description = "Chỉ xóa khi sản phẩm chưa nằm trong đơn hàng")
+    public ResponseEntity<ApiResponse<Void>> purgeProduct(@PathVariable Long id) {
+        productService.purgeProduct(id);
+        return ResponseEntity.ok(ApiResponse.empty("Đã xóa sản phẩm."));
     }
 }

@@ -36,6 +36,7 @@ public class OrderResponse {
     private String couponCode;
     private String shippingAddressSnapshot;
     private String customerNote;
+    private String guestAccessToken;
 
     private List<OrderItemResponse> items;
     private int totalQuantity;

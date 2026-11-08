@@ -3,6 +3,8 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { orderService } from '../services/orderService';
+import { paymentService } from '../services/paymentService';
+import { authService } from '../services/authService';
 import { addressService } from '../services/addressService';
 import { wishlistService } from '../services/wishlistService';
 import { OrderSummary, Order, OrderItem, OrderStatus } from '../types/order.types';
@@ -21,6 +23,33 @@ import {
   RefreshCw,
   Gem,
 } from 'lucide-react';
+
+const PasswordForm: React.FC = () => {
+  const { success, error } = useToast();
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  return (
+    <form
+      onSubmit={async (event) => {
+        event.preventDefault();
+        try {
+          await authService.changePassword(currentPassword, newPassword);
+          success('Đã đổi mật khẩu.', 'Tài khoản');
+          setCurrentPassword('');
+          setNewPassword('');
+        } catch {
+          error('Mật khẩu hiện tại không đúng.');
+        }
+      }}
+      style={{ marginTop: '16px', display: 'grid', gap: '8px' }}
+    >
+      <div style={{ color: '#fff', fontWeight: 600 }}>Đổi mật khẩu</div>
+      <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Mật khẩu hiện tại" required style={{ padding: '10px', borderRadius: '8px', background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.12)' }} />
+      <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mật khẩu mới" required minLength={6} style={{ padding: '10px', borderRadius: '8px', background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.12)' }} />
+      <button className="btn-outline-pill" style={{ padding: '10px' }}>Lưu mật khẩu mới</button>
+    </form>
+  );
+};
 
 export const CustomerPortalPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -67,25 +96,7 @@ export const CustomerPortalPage: React.FC = () => {
       orderService
         .getUserOrders(orderFilterStatus)
         .then((res: any) => setOrders(res.content))
-        .catch((err: unknown) => {
-          console.warn('Could not load orders:', err);
-          // Curated sample orders if fresh or offline
-          setOrders([
-            {
-              id: 1,
-              orderCode: 'AURA-2026-VIP01',
-              userId: 1,
-              customerName: user?.fullName || 'Khách Hàng VIP',
-              orderStatus: 'DELIVERED',
-              paymentStatus: 'COMPLETED',
-              paymentMethod: 'VNPAY',
-              totalAmount: 48500000,
-              itemCount: 1,
-              firstItemName: 'Nhẫn Solitaire Diamond 2.0ct',
-              createdAt: '2026-09-28T14:20:00Z',
-            },
-          ]);
-        })
+        .catch(() => setOrders([]))
         .finally(() => setLoadingOrders(false));
     } else if (currentTab === 'addresses') {
       addressService
@@ -112,7 +123,7 @@ export const CustomerPortalPage: React.FC = () => {
             Vui lòng đăng nhập để truy cập sổ địa chỉ bảo hiểm, theo dõi tiến độ chế tác đơn hàng và các đặc quyền khách hàng hoàng gia.
           </p>
           <button onClick={() => openAuthModal('login')} className="btn-pill-sakura" style={{ padding: '12px 32px' }}>
-            Đăng Nhập Khách VIP
+            Đăng nhập để xem tài khoản
           </button>
         </div>
       </div>
@@ -130,7 +141,7 @@ export const CustomerPortalPage: React.FC = () => {
         id: 1,
         orderCode,
         userId: 1,
-        customerName: user?.fullName || 'Khách Hàng VIP',
+        customerName: user?.fullName || 'Khách hàng',
         orderStatus: 'CONFIRMED',
         paymentStatus: 'COMPLETED',
         paymentMethod: 'VNPAY',
@@ -246,7 +257,7 @@ export const CustomerPortalPage: React.FC = () => {
         return { label: 'Bảo An Vận Chuyển', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.15)' };
       case 'DELIVERED':
       case 'COMPLETED':
-        return { label: 'Đã Bàn Giao VIP', color: '#10B981', bg: 'rgba(16, 185, 129, 0.15)' };
+        return { label: 'Đã giao', color: '#10B981', bg: 'rgba(16, 185, 129, 0.15)' };
       case 'CANCELLED':
         return { label: 'Đã Hủy', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.15)' };
       default:
@@ -315,7 +326,7 @@ export const CustomerPortalPage: React.FC = () => {
                 {user?.fullName || user?.username}
               </h3>
               <div style={{ fontSize: '0.78rem', color: 'var(--color-gold-400)', marginTop: '4px', fontWeight: 500 }}>
-                💎 Thành Viên Kim Cương VIP
+                Tài khoản của bạn
               </div>
             </div>
 
@@ -443,7 +454,7 @@ export const CustomerPortalPage: React.FC = () => {
                 }}
               >
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '24px' }}>
-                  Thông Tin Khách Hàng VIP
+                  Thông tin khách hàng
                 </h3>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
@@ -463,10 +474,11 @@ export const CustomerPortalPage: React.FC = () => {
                   </div>
 
                   <div style={{ padding: '16px', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '10px' }}>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Số Điện Thoại VIP</div>
-                    <div style={{ fontSize: '0.95rem', color: '#FFFFFF', fontWeight: 600 }}>{user?.phone || '0909 123 456'}</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Số điện thoại</div>
+                    <div style={{ fontSize: '0.95rem', color: '#FFFFFF', fontWeight: 600 }}>{user?.phone || 'Chưa cập nhật'}</div>
                   </div>
                 </div>
+                <PasswordForm />
 
                 <div style={{ padding: '20px', backgroundColor: 'rgba(212, 175, 55, 0.08)', border: '1px solid rgba(212, 175, 55, 0.25)', borderRadius: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-gold-400)', fontWeight: 600, fontSize: '0.92rem', marginBottom: '6px' }}>
@@ -565,13 +577,51 @@ export const CustomerPortalPage: React.FC = () => {
                             <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-gold-400)', marginBottom: '8px' }}>
                               {o.totalAmount.toLocaleString('vi-VN')}₫
                             </div>
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                             <button
                               onClick={() => handleViewOrder(o.orderCode)}
                               className="btn-outline-pill"
                               style={{ padding: '6px 16px', fontSize: '0.78rem' }}
                             >
-                              Chi Tiết Đơn Hàng <ChevronRight size={13} />
+                              Chi tiết <ChevronRight size={13} />
                             </button>
+                            {o.paymentMethod === 'VNPAY' && o.paymentStatus === 'PENDING' && o.orderStatus !== 'CANCELLED' && (
+                              <button
+                                className="btn-pill-sakura"
+                                style={{ padding: '6px 16px', fontSize: '0.78rem' }}
+                                onClick={async () => {
+                                  try {
+                                    const detail = await orderService.getOrderDetails(o.orderCode);
+                                    sessionStorage.setItem('aura_vnpay_pending', JSON.stringify({
+                                      orderCode: detail.orderCode,
+                                      accessToken: detail.guestAccessToken,
+                                      items: (detail.items || []).map((item) => ({
+                                        id: item.id,
+                                        variantId: item.variantId,
+                                        productId: item.productId,
+                                        productName: item.productName,
+                                        productSlug: item.productSlug,
+                                        sku: item.sku,
+                                        unitPrice: item.unitPrice,
+                                        originalPrice: item.unitPrice,
+                                        quantity: item.quantity,
+                                        subtotal: item.subtotal,
+                                        thumbnailUrl: item.thumbnailUrl,
+                                        availableStock: item.quantity,
+                                        inStock: true,
+                                      })),
+                                    }));
+                                    const payment = await paymentService.initiatePayment(detail.orderCode, detail.guestAccessToken);
+                                    if (payment.paymentUrl) window.location.href = payment.paymentUrl;
+                                  } catch {
+                                    error('Không thanh toán lại được đơn này.');
+                                  }
+                                }}
+                              >
+                                Thanh toán lại
+                              </button>
+                            )}
+                            </div>
                           </div>
                         </div>
                       );

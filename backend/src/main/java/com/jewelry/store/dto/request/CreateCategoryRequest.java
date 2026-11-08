@@ -20,6 +20,7 @@ public class CreateCategoryRequest {
 
     private String description;
     private String imageUrl;
+    private Integer promotionPercent;
     private Long parentId;
 
     @Builder.Default

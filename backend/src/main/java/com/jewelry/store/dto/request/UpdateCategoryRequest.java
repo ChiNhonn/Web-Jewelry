@@ -20,6 +20,7 @@ public class UpdateCategoryRequest {
 
     private String description;
     private String imageUrl;
+    private Integer promotionPercent;
     private Long parentId;
     private CategoryStatus status;
 }

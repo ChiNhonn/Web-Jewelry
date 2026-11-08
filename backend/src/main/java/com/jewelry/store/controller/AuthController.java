@@ -66,4 +66,32 @@ public class AuthController {
         UserSummaryResponse response = authService.getCurrentUserProfile(userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success("Lấy thông tin tài khoản thành công!", response));
     }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Gửi mã OTP đặt lại mật khẩu qua Gmail")
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@RequestBody java.util.Map<String, String> body) {
+        String email = body.get("email");
+        String devOtp = authService.requestPasswordOtp(email);
+        String message = devOtp == null
+                ? "Đã gửi mã OTP tới Gmail của bạn. Mã có hiệu lực 10 phút."
+                : "Máy chưa cấu hình Gmail nên chưa gửi được thư. Mã OTP tạm thời: " + devOtp;
+        return ResponseEntity.ok(ApiResponse.success(message, devOtp));
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Đặt lại mật khẩu bằng mã OTP")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestBody java.util.Map<String, String> body) {
+        authService.resetPassword(body.get("email"), body.get("otp"), body.get("newPassword"));
+        return ResponseEntity.ok(ApiResponse.empty("Đã đổi mật khẩu. Bạn có thể đăng nhập lại."));
+    }
+
+    @PutMapping("/change-password")
+    @SecurityRequirement(name = "BearerAuth")
+    @Operation(summary = "Đổi mật khẩu trong tài khoản")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody java.util.Map<String, String> body) {
+        authService.changePassword(userDetails.getUsername(), body.get("currentPassword"), body.get("newPassword"));
+        return ResponseEntity.ok(ApiResponse.empty("Đã đổi mật khẩu"));
+    }
 }

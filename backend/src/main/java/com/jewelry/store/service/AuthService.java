@@ -17,4 +17,10 @@ public interface AuthService {
     void logout(String refreshToken);
 
     UserSummaryResponse getCurrentUserProfile(String username);
+
+    String requestPasswordOtp(String email);
+
+    void resetPassword(String email, String otp, String newPassword);
+
+    void changePassword(String username, String currentPassword, String newPassword);
 }

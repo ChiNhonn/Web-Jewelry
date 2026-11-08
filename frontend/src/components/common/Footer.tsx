@@ -85,16 +85,14 @@ export const Footer: React.FC = () => {
             <li><a href="#huong-dan-do-ni">Hướng Dẫn Đo Ni Nhẫn</a></li>
             <li><a href="#chinh-sach-bao-hanh">Chính Sách Bảo Hành & Thu Đổi</a></li>
             <li><a href="#giao-hang">Vận Chuyển & Thanh Toán</a></li>
-            <li><a href="#cau-hoi">Câu Hỏi Thường Gặp (FAQ)</a></li>
+            <li><a href="#cau-hoi">Câu hỏi thường gặp</a></li>
           </ul>
         </div>
 
         <div>
           <h4 className="heading-serif" style={{ fontSize: '0.9rem', color: 'var(--color-gold-400)', marginBottom: '16px' }}>Hệ Thống Công Nghệ</h4>
           <p style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-            <strong>Architecture:</strong> Spring Boot 3.3.4 (Java 21) + React 18 (TypeScript)<br />
-            <strong>Database:</strong> MySQL 8.0 with Optimistic Locking<br />
-            <strong>API Spec:</strong> OpenAPI 3.0 (Swagger)
+            Cửa hàng trang sức AURA: xem hàng, đặt hàng và thanh toán khi nhận hoặc qua VNPay sandbox.
           </p>
         </div>
       </div>
@@ -107,7 +105,7 @@ export const Footer: React.FC = () => {
         fontSize: '0.78rem',
         color: 'var(--color-text-muted)',
       }}>
-        © 2026 AURA Luxury Jewelry System. Thiết kế kiến trúc chuẩn Enterprise E-Commerce.
+        © 2026 AURA. Trang sức vàng và đá quý.
       </div>
     </footer>
   );

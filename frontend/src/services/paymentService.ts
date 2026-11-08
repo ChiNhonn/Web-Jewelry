@@ -6,9 +6,11 @@ export const paymentService = {
   /**
    * Initiate payment for an order (generates VNPay payment URL or VietQR transfer payload)
    */
-  async initiatePayment(orderCode: string): Promise<PaymentInitiateResponse> {
+  async initiatePayment(orderCode: string, accessToken?: string): Promise<PaymentInitiateResponse> {
     const response = await apiClient.post<ApiResponse<PaymentInitiateResponse>>(
-      `/api/v1/payments/${orderCode}/initiate`
+      `/api/v1/payments/${orderCode}/initiate`,
+      null,
+      { params: accessToken ? { accessToken } : undefined }
     );
     return response.data.data;
   },

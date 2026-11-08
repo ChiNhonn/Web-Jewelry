@@ -5,6 +5,7 @@ import { reviewService } from '../services/reviewService';
 import { ProductDetail, ProductVariant } from '../types/product.types';
 import { Review, ProductRatingSummary } from '../types/review.types';
 import { useCart } from '../context/CartContext';
+import { useCompare } from '../context/CompareContext';
 import { useToast } from '../context/ToastContext';
 import {
   Gem,
@@ -26,6 +27,7 @@ export const ProductDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { add: addCompare } = useCompare();
   const { success, error } = useToast();
 
   const [product, setProduct] = useState<ProductDetail | null>(null);
@@ -211,7 +213,7 @@ export const ProductDetailPage: React.FC = () => {
         productId: product.id,
         productName: product.name,
         userId: 1,
-        customerName: 'Quý Khách Hàng VIP',
+        customerName: 'Khách hàng',
         rating: newReviewRating,
         comment: newReviewComment.trim(),
         status: 'APPROVED',
@@ -317,7 +319,7 @@ export const ProductDetailPage: React.FC = () => {
                     letterSpacing: '0.08em',
                   }}
                 >
-                  GIA CERTIFIED
+                  Giám định đá quý
                 </span>
                 <span
                   style={{
@@ -332,7 +334,7 @@ export const ProductDetailPage: React.FC = () => {
                     letterSpacing: '0.08em',
                   }}
                 >
-                  ITALIAN 18K GOLD
+                  Vàng Ý 18K
                 </span>
               </div>
             </div>
@@ -385,7 +387,7 @@ export const ProductDetailPage: React.FC = () => {
               </div>
               <span style={{ color: 'rgba(255, 255, 255, 0.2)' }}>•</span>
               <span style={{ fontSize: '0.84rem', color: 'var(--color-text-secondary)' }}>
-                {(ratingSummary?.totalReviews ?? reviews.length) || 18} Khách Hàng VIP Đã Đánh Giá
+                {ratingSummary?.totalReviews ?? reviews.length} đánh giá
               </span>
             </div>
 
@@ -545,6 +547,14 @@ export const ProductDetailPage: React.FC = () => {
               >
                 <ShoppingBag size={18} /> Thêm Vào Giỏ Hàng
               </button>
+              <button
+                type="button"
+                onClick={() => addCompare(product.slug, product.name)}
+                className="btn-outline-pill"
+                style={{ padding: '14px', fontSize: '0.92rem' }}
+              >
+                So sánh
+              </button>
 
               {/* Buy Now Button */}
               <button
@@ -554,7 +564,7 @@ export const ProductDetailPage: React.FC = () => {
                 className="btn-pill-sakura"
                 style={{ flex: 1, padding: '14px', fontSize: '0.92rem', cursor: inStock ? 'pointer' : 'not-allowed' }}
               >
-                Mua Ngay VIP
+                Mua ngay
               </button>
             </div>
 
@@ -618,7 +628,7 @@ export const ProductDetailPage: React.FC = () => {
               { id: 'desc', label: 'Ý Niệm & Chế Tác' },
               { id: 'specs', label: 'Thông Số Kỹ Thuật & Giám Định' },
               { id: 'sizeGuide', label: 'Bảng Đo Ni Chuẩn' },
-              { id: 'policy', label: 'Đặc Quyền Khách Hàng VIP' },
+              { id: 'policy', label: 'Bảo hành và đổi trả' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -654,12 +664,13 @@ export const ProductDetailPage: React.FC = () => {
           {activeTab === 'specs' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
               {[
-                { label: 'Thương hiệu chế tác', val: product.brand },
-                { label: 'Chất liệu kim loại quý', val: selectedVariant?.materialType || 'Vàng Ý 750 / 18K' },
-                { label: 'Chứng nhận giám định đá quý', val: 'Viện Ngọc Học Hoa Kỳ GIA (Mã số khắc laser)' },
-                { label: 'Tiêu chuẩn kim cương', val: 'Carat 2.0 • Color F • Clarity VVS1 • Cut 3X' },
-                { label: 'Kỹ thuật chấu đính đá', val: 'Chấu viền hoàng gia đính kim cương Micro-pavé' },
-                { label: 'Hộp đựng & Phụ kiện đi kèm', val: 'Hộp da cao cấp AURA, Kính lúp soi kim cương, Thẻ bảo hành điện tử' },
+                { label: 'Chất liệu', val: selectedVariant?.materialType || product.materialOverview || 'Chưa cập nhật' },
+                { label: 'Trọng lượng', val: product.weightGrams ? `${product.weightGrams} g` : 'Chưa cập nhật' },
+                { label: 'Loại đá', val: product.stoneType || 'Chưa cập nhật' },
+                { label: 'Độ tinh khiết', val: product.clarity || 'Chưa cập nhật' },
+                { label: 'Kích thước', val: selectedVariant?.sizeOption || 'Chưa cập nhật' },
+                { label: 'Bảo hành', val: product.warranty || 'Chưa cập nhật' },
+                { label: 'Tồn kho', val: `${selectedVariant?.availableQuantity ?? 0} sản phẩm` },
               ].map((row, idx) => (
                 <div key={idx} style={{ padding: '14px', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '8px' }}>
                   <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginBottom: '4px' }}>{row.label}</div>
@@ -709,7 +720,7 @@ export const ProductDetailPage: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
               <div style={{ padding: '20px', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px' }}>
                 <Award size={24} color="#ff6584" style={{ marginBottom: '10px' }} />
-                <h4 style={{ color: '#FFFFFF', fontSize: '0.95rem', marginBottom: '8px' }}>Chính Sách Thu Đổi VIP</h4>
+                <h4 style={{ color: '#FFFFFF', fontSize: '0.95rem', marginBottom: '8px' }}>Chính sách đổi trả</h4>
                 <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.84rem', lineHeight: 1.5 }}>
                   Thu đổi lên đời sản phẩm lớn hơn tới 100% giá trị hóa đơn trong vòng 12 tháng đầu tiên.
                 </p>
@@ -759,7 +770,7 @@ export const ProductDetailPage: React.FC = () => {
               className="btn-pill-sakura"
               style={{ padding: '10px 22px', fontSize: '0.84rem' }}
             >
-              <MessageSquare size={16} /> Viết Đánh Giá VIP
+              <MessageSquare size={16} /> Viết đánh giá
             </button>
           </div>
 
@@ -796,7 +807,7 @@ export const ProductDetailPage: React.FC = () => {
                       </div>
                       <div>
                         <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#FFFFFF' }}>
-                          {rev.customerName || 'Khách Hàng VIP'}
+                          {rev.customerName || 'Khách hàng'}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: '#10B981' }}>
                           <CheckCircle2 size={12} /> Đã xác thực sở hữu tác phẩm

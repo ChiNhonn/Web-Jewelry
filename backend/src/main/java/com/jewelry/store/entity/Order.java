@@ -71,6 +71,9 @@ public class Order extends BaseAuditableEntity {
     @Column(name = "customer_note", length = 500)
     private String customerNote;
 
+    @Column(name = "guest_access_token", length = 64)
+    private String guestAccessToken;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<OrderItem> orderItems = new ArrayList<>();

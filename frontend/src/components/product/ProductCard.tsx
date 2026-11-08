@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, Gem } from 'lucide-react';
 import { ProductSummary } from '../../types/product.types';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
+import { useCompare } from '../../context/CompareContext';
 import { useToast } from '../../context/ToastContext';
+import { wishlistService } from '../../services/wishlistService';
 
 interface ProductCardProps {
   product: ProductSummary;
@@ -13,7 +16,10 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, className, style }) => {
   const { addToCart } = useCart();
-  const { success } = useToast();
+  const { isAuthenticated, openAuthModal } = useAuth();
+  const { add: addCompare } = useCompare();
+  const { success, error } = useToast();
+  const [imageFailed, setImageFailed] = React.useState(false);
 
   const handleQuickAdd = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -39,10 +45,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className, st
     });
   };
 
-  const handleWishlistClick = (e: React.MouseEvent) => {
+  const handleWishlistClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    success(`Đã thêm "${product.name}" vào danh sách tuyệt tác yêu thích.`, 'Wishlist');
+    if (!isAuthenticated) {
+      openAuthModal('login');
+      return;
+    }
+    try {
+      await wishlistService.addToWishlist(product.id);
+      success(`Đã thêm "${product.name}" vào danh sách yêu thích.`, 'Yêu thích');
+    } catch {
+      error('Không thêm được vào danh sách yêu thích.');
+    }
   };
 
   const formatPrice = (price: number) => {
@@ -70,6 +85,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className, st
       {/* Product Image Area */}
       <Link
         to={`/products/${product.slug}`}
+        aria-label={product.name}
         style={{
           position: 'relative',
           height: '240px',
@@ -83,16 +99,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className, st
           border: '1px solid rgba(255, 255, 255, 0.05)',
         }}
       >
-        {product.thumbnailUrl ? (
+        {product.thumbnailUrl && !imageFailed ? (
           <img
             src={product.thumbnailUrl}
-            alt={product.name}
+            alt=""
             style={{
               width: '100%',
               height: '100%',
               objectFit: 'cover',
               transition: 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
+            onError={() => setImageFailed(true)}
             onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.08)')}
             onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
           />
@@ -116,7 +133,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className, st
         )}
 
         {/* Badges */}
-        <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ position: 'absolute', top: '12px', left: '12px', right: '52px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-start' }}>
           {hasDiscount && (
             <span
               style={{
@@ -145,6 +162,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className, st
                 borderRadius: '6px',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
+                maxWidth: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
             >
               {product.categoryName}
@@ -184,6 +205,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className, st
         >
           <Heart size={15} />
         </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            addCompare(product.slug, product.name);
+          }}
+          style={{
+            position: 'absolute',
+            bottom: '12px',
+            left: '12px',
+            zIndex: 2,
+            borderRadius: '999px',
+            padding: '4px 10px',
+            fontSize: '0.72rem',
+            backgroundColor: 'rgba(5, 5, 8, 0.78)',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.15)',
+            cursor: 'pointer',
+          }}
+        >
+          So sánh
+        </button>
       </Link>
 
       {/* Product Information */}
@@ -203,6 +247,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className, st
               color: '#FFFFFF',
               lineHeight: 1.4,
               marginBottom: '6px',
+              minHeight: '2.8em',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
               transition: 'color 0.2s ease',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-sakura-300)')}

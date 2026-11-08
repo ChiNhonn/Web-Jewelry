@@ -63,4 +63,17 @@ export const authService = {
     const response = await apiClient.get<ApiResponse<UserSummary>>('/api/v1/auth/me');
     return response.data.data;
   },
+
+  async requestPasswordOtp(email: string): Promise<{ message: string; devOtp?: string }> {
+    const response = await apiClient.post<ApiResponse<string | null>>('/api/v1/auth/forgot-password', { email });
+    return { message: response.data.message, devOtp: response.data.data || undefined };
+  },
+
+  async resetPassword(email: string, otp: string, newPassword: string): Promise<void> {
+    await apiClient.post('/api/v1/auth/reset-password', { email, otp, newPassword });
+  },
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await apiClient.put('/api/v1/auth/change-password', { currentPassword, newPassword });
+  },
 };

@@ -19,7 +19,7 @@ public interface CartMapper {
         if (item == null) return null;
 
         ProductVariant variant = item.getVariant();
-        BigDecimal unitPrice = variant.getSalePrice();
+        BigDecimal unitPrice = com.jewelry.store.util.PricingUtils.effectiveSale(variant);
         BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
 
         int availableStock = 0;

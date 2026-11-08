@@ -30,8 +30,10 @@ public class PaymentController {
     public ResponseEntity<ApiResponse<PaymentInitiateResponse>> initiatePayment(
             @AuthenticationPrincipal UserPrincipal currentUser,
             @PathVariable String orderCode,
+            @RequestParam(required = false) String accessToken,
             HttpServletRequest request) {
-        PaymentInitiateResponse response = paymentService.initiatePayment(currentUser.getId(), orderCode, request);
+        Long userId = currentUser != null ? currentUser.getId() : null;
+        PaymentInitiateResponse response = paymentService.initiatePayment(userId, orderCode, accessToken, request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

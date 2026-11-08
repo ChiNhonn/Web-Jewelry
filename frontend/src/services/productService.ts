@@ -6,6 +6,16 @@ export const productService = {
   /**
    * Get Category navigation hierarchy
    */
+  async createCategory(payload: { name: string; description?: string; promotionPercent?: number }): Promise<Category> {
+    const response = await apiClient.post<ApiResponse<Category>>('/api/v1/categories', payload);
+    return response.data.data;
+  },
+
+  async updateCategory(id: number, payload: { name: string; description?: string; promotionPercent?: number; status?: string }): Promise<Category> {
+    const response = await apiClient.put<ApiResponse<Category>>(`/api/v1/categories/${id}`, payload);
+    return response.data.data;
+  },
+
   async getCategories(): Promise<Category[]> {
     const response = await apiClient.get<ApiResponse<Category[]>>('/api/v1/categories');
     return response.data.data;

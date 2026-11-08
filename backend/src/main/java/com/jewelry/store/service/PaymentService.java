@@ -8,7 +8,7 @@ import java.util.Map;
 
 public interface PaymentService {
 
-    PaymentInitiateResponse initiatePayment(Long userId, String orderCode, HttpServletRequest request);
+    PaymentInitiateResponse initiatePayment(Long userId, String orderCode, String accessToken, HttpServletRequest request);
 
     VNPayReturnResponse processVNPayReturn(Map<String, String> queryParams);
 

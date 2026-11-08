@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { CartItem } from '../types/cart.types';
 import { cartService } from '../services/cartService';
 import { useAuth } from './AuthContext';
@@ -38,6 +38,7 @@ interface CartContextValue {
   updateQuantity: (variantId: number, quantity: number) => Promise<void>;
   removeItem: (variantId: number) => Promise<void>;
   clearCart: () => Promise<void>;
+  replaceItems: (next: CartItem[]) => void;
   applyCoupon: (code: string) => Promise<boolean>;
   removeCoupon: () => void;
   refreshCart: () => Promise<void>;
@@ -46,6 +47,7 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 const LOCAL_STORAGE_CART_KEY = 'aura_guest_cart';
+const CART_MODE_KEY = 'aura_cart_mode';
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>(() => {
@@ -61,25 +63,44 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { isAuthenticated } = useAuth();
   const { success, error, info } = useToast();
+  const wasAuthenticated = useRef(false);
 
-  // Save to local storage whenever items change
   useEffect(() => {
+    if (wasAuthenticated.current && !isAuthenticated) {
+      setItems([]);
+      localStorage.setItem(LOCAL_STORAGE_CART_KEY, '[]');
+      localStorage.setItem(CART_MODE_KEY, 'guest');
+    }
+    wasAuthenticated.current = isAuthenticated;
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (localStorage.getItem('access_token')) return;
     try {
+      localStorage.setItem(CART_MODE_KEY, 'guest');
       localStorage.setItem(LOCAL_STORAGE_CART_KEY, JSON.stringify(items));
     } catch (e) {
       console.warn('Failed to save cart to localStorage', e);
     }
   }, [items]);
 
-  // Load server cart when authenticated
   const refreshCart = useCallback(async () => {
     if (!isAuthenticated) return;
     setIsLoading(true);
     try {
-      const serverCart = await cartService.getCart();
-      if (serverCart && serverCart.items) {
-        setItems(serverCart.items);
+      const mode = localStorage.getItem(CART_MODE_KEY);
+      const raw = localStorage.getItem(LOCAL_STORAGE_CART_KEY);
+      const localItems: CartItem[] = raw ? JSON.parse(raw) : [];
+      if (mode === 'guest' && localItems.length > 0) {
+        const merged = await cartService.mergeItems(
+          localItems.map((item) => ({ variantId: item.variantId, quantity: item.quantity }))
+        );
+        setItems(merged.items || []);
+      } else {
+        const serverCart = await cartService.getCart();
+        setItems(serverCart?.items || []);
       }
+      localStorage.setItem(CART_MODE_KEY, 'account');
     } catch (err) {
       console.warn('Could not fetch server cart:', err);
     } finally {
@@ -96,7 +117,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Calculations
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const shippingFee = 0; // Free luxury white-glove shipping on all jewelry orders
+  const shippingFee = subtotal > 0 && subtotal < 10000000 ? 50000 : 0;
 
   let discountAmount = 0;
   if (appliedCoupon) {
@@ -307,6 +328,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     info('Đã gỡ bỏ mã giảm giá.');
   }, [info]);
 
+  const replaceItems = useCallback((next: CartItem[]) => {
+    setItems(next);
+  }, []);
+
   return (
     <CartContext.Provider
       value={{
@@ -322,6 +347,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateQuantity,
         removeItem,
         clearCart,
+        replaceItems,
         applyCoupon,
         removeCoupon,
         refreshCart,

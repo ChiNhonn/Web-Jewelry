@@ -59,6 +59,7 @@ export const ProductCatalogPage: React.FC = () => {
         minPrice,
         maxPrice,
         material: currentMaterial !== 'all' ? currentMaterial : undefined,
+        inStockOnly: searchParams.get('stock') !== 'all',
         page: currentPage,
         size: 9,
         sortBy: sortBy || 'createdAt',
@@ -72,111 +73,13 @@ export const ProductCatalogPage: React.FC = () => {
       }
     } catch (err) {
       console.warn('Failed to fetch filtered products:', err);
-      // Fallback curated display if backend is offline or empty
-      setProducts([
-        {
-          id: 1,
-          name: 'Nhẫn Solitaire Diamond 2.0ct',
-          slug: 'nhan-solitaire-diamond-2ct',
-          baseSku: 'AUR-RNG-001',
-          categoryName: 'Nhẫn Kim Cương',
-          categorySlug: 'nhan-kim-cuong',
-          brand: 'AURA JEWELRY',
-          minPrice: 48500000,
-          maxPrice: 48500000,
-          originalPrice: 55000000,
-          materialOverview: 'Kim cương tự nhiên GIA • Vàng trắng Ý 18K',
-          isFeatured: true,
-          status: 'ACTIVE',
-          createdAt: '2026-09-01T00:00:00Z',
-        },
-        {
-          id: 2,
-          name: 'Dây Chuyền Royal Crown Diamond',
-          slug: 'day-chuyen-royal-crown',
-          baseSku: 'AUR-NCK-002',
-          categoryName: 'Dây Chuyền & Mặt Dây',
-          categorySlug: 'day-chuyen-mat-day',
-          brand: 'AURA JEWELRY',
-          minPrice: 32000000,
-          maxPrice: 32000000,
-          originalPrice: 36000000,
-          materialOverview: 'Vàng Ý 750 nguyên khối • Kim cương baguette',
-          isFeatured: true,
-          status: 'ACTIVE',
-          createdAt: '2026-09-02T00:00:00Z',
-        },
-        {
-          id: 3,
-          name: 'Vòng Tay Tennis Diamond 5.0ct',
-          slug: 'vong-tay-tennis-diamond-5ct',
-          baseSku: 'AUR-BRC-003',
-          categoryName: 'Vòng Tay & Lắc',
-          categorySlug: 'vong-tay-lac',
-          brand: 'AURA JEWELRY',
-          minPrice: 95000000,
-          maxPrice: 95000000,
-          originalPrice: 110000000,
-          materialOverview: 'Bạch kim Platinum 950 • 48 viên kim cương tròn',
-          isFeatured: true,
-          status: 'ACTIVE',
-          createdAt: '2026-09-03T00:00:00Z',
-        },
-        {
-          id: 4,
-          name: 'Bông Tai Akoya Pearl & Diamond Halo',
-          slug: 'bong-tai-akoya-pearl-diamond',
-          baseSku: 'AUR-EAR-004',
-          categoryName: 'Bông Tai',
-          categorySlug: 'bong-tai',
-          brand: 'AURA JEWELRY',
-          minPrice: 19800000,
-          maxPrice: 19800000,
-          originalPrice: 22500000,
-          materialOverview: 'Ngọc trai Akoya Nhật Bản 8.5mm • Vàng hồng 18K',
-          isFeatured: true,
-          status: 'ACTIVE',
-          createdAt: '2026-09-04T00:00:00Z',
-        },
-        {
-          id: 5,
-          name: 'Bộ Trang Sức Dạ Vũ Hoàng Gia Empress',
-          slug: 'bo-trang-suc-empress-diamond',
-          baseSku: 'AUR-SET-005',
-          categoryName: 'Bộ Trang Sức',
-          categorySlug: 'bo-trang-suc',
-          brand: 'AURA JEWELRY',
-          minPrice: 185000000,
-          maxPrice: 185000000,
-          originalPrice: 210000000,
-          materialOverview: 'Set trọn bộ: Dây chuyền, Nhẫn, Vòng tay & Bông tai',
-          isFeatured: true,
-          status: 'ACTIVE',
-          createdAt: '2026-09-05T00:00:00Z',
-        },
-        {
-          id: 6,
-          name: 'Nhẫn Cầu Hôn Eternity Pavé Diamond',
-          slug: 'nhan-cau-hon-eternity-pave',
-          baseSku: 'AUR-RNG-006',
-          categoryName: 'Nhẫn Kim Cương',
-          categorySlug: 'nhan-kim-cuong',
-          brand: 'AURA JEWELRY',
-          minPrice: 28900000,
-          maxPrice: 28900000,
-          originalPrice: 33000000,
-          materialOverview: 'Vàng hồng Ý 18K đính kim cương tấm toàn đai',
-          isFeatured: true,
-          status: 'ACTIVE',
-          createdAt: '2026-09-06T00:00:00Z',
-        },
-      ]);
+      setProducts([]);
       setTotalPages(1);
-      setTotalElements(6);
+      setTotalElements(0);
     } finally {
       setLoading(false);
     }
-  }, [currentCategory, currentSearch, currentSort, currentPage, currentPriceRange, currentMaterial]);
+  }, [currentCategory, currentSearch, currentSort, currentPage, currentPriceRange, currentMaterial, searchParams]);
 
   useEffect(() => {
     fetchProducts();
@@ -324,13 +227,19 @@ export const ProductCatalogPage: React.FC = () => {
                   Tất Cả Danh Mục
                 </button>
 
-                {[
-                  { slug: 'nhan-kim-cuong', name: 'Nhẫn Kim Cương' },
-                  { slug: 'day-chuyen-mat-day', name: 'Dây Chuyền & Mặt Dây' },
-                  { slug: 'vong-tay-lac', name: 'Vòng Tay & Lắc' },
-                  { slug: 'bong-tai', name: 'Bông Tai Quý Phái' },
-                  { slug: 'bo-trang-suc', name: 'Bộ Trang Sức Dạ Tiệc' },
-                ].map((cat) => (
+                {(categories.length > 0
+                  ? categories.map((category) => ({ slug: category.slug, name: category.name }))
+                  : [
+                      { slug: 'nhan-kim-cuong', name: 'Nhẫn Kim Cương' },
+                      { slug: 'day-chuyen-mat-day', name: 'Dây Chuyền & Mặt Dây' },
+                      { slug: 'vong-tay-lac', name: 'Vòng Tay & Lắc' },
+                      { slug: 'bong-tai', name: 'Bông Tai' },
+                      { slug: 'bo-trang-suc', name: 'Bộ Trang Sức' },
+                      { slug: 'nhan-cuoi', name: 'Nhẫn Cưới' },
+                      { slug: 'kieng-vong-co', name: 'Kiềng và Vòng Cổ' },
+                      { slug: 'charm-phong-thuy', name: 'Charm Phong Thủy' },
+                    ]
+                ).map((cat) => (
                   <button
                     key={cat.slug}
                     onClick={() => updateFilterParam('category', cat.slug)}
@@ -459,7 +368,14 @@ export const ProductCatalogPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Sort Dropdown */}
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#FFFFFF', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={searchParams.get('stock') !== 'all'}
+                  onChange={(e) => updateFilterParam('stock', e.target.checked ? '' : 'all')}
+                />
+                Chỉ hiện món còn hàng
+              </label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <ArrowUpDown size={15} color="#9ea3b0" />
                 <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>Sắp xếp:</span>

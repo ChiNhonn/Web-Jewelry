@@ -84,39 +84,3 @@ Khi thấy dòng sau là Frontend đã sẵn sàng:
 | **Website Trang Sức** | [http://localhost:5173](http://localhost:5173) | Giao diện mua sắm sang trọng, hiển thị live status Backend |
 | **API Documentation** | [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) | Giao diện Swagger test các API endpoints |
 | **Backend Health Check** | [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health) | Kiểm tra trạng thái hoạt động của Spring Boot & DB |
-
----
-
-## 6. Hướng Dẫn Chạy Ứng Dụng Di Động Android Native (AURA Fine Jewelry)
-
-Ứng dụng Android được xây dựng hoàn toàn bằng **Kotlin 2.0 + Jetpack Compose + Material 3 Dark Luxury**, kết nối trực tiếp với Spring Boot Backend (Zero-Trust Security, Offline-First Room Database, DataStore Preferences).
-
-### Cách 1: Chạy bằng Android Studio (Khuyên dùng)
-1. Mở **Android Studio**.
-2. Chọn **Open** và dẫn tới thư mục: `Web trang sức/android`.
-3. Đợi Android Studio đồng bộ Gradle xong.
-4. Chọn thiết bị chạy:
-   - **Máy ảo (Android Emulator)**: Ứng dụng đã được cấu hình tự động trỏ về `http://10.0.2.2:8080/` để kết nối vào Backend Spring Boot đang chạy trên máy tính.
-   - **Điện thoại thật (USB Debugging)**: Chạy lệnh sau trên máy tính để chuyển tiếp cổng:
-     ```powershell
-     adb reverse tcp:8080 tcp:8080
-     ```
-5. Nhấn nút **Run** (biểu tượng ▶ hoặc tổ hợp phím `Shift + F10`).
-
-### Cách 2: Cài trực tiếp file APK đã đóng gói
-File APK Debug đã được biên dịch sẵn tại:
-```
-android/app/build/outputs/apk/debug/app-debug.apk
-```
-Để cài đặt vào máy ảo hoặc điện thoại Android đã cắm USB:
-```powershell
-adb install -r "android\app\build\outputs\apk\debug\app-debug.apk"
-```
-
-### Cách 3: Tự biên dịch lại file APK từ dòng lệnh
-```powershell
-cd android
-.\gradlew.bat assembleDebug
-```
-File APK mới sẽ được tạo trong thư mục `android/app/build/outputs/apk/debug/`.
-

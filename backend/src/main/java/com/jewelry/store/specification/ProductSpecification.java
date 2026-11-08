@@ -2,6 +2,7 @@ package com.jewelry.store.specification;
 
 import com.jewelry.store.dto.request.ProductFilterRequest;
 import com.jewelry.store.entity.Category;
+import com.jewelry.store.entity.Inventory;
 import com.jewelry.store.entity.Product;
 import com.jewelry.store.entity.ProductVariant;
 import jakarta.persistence.criteria.*;
@@ -81,6 +82,17 @@ public class ProductSpecification implements Specification<Product> {
         // 7. Lọc theo trạng thái kinh doanh
         if (filter.getStatus() != null) {
             predicates.add(cb.equal(root.get("status"), filter.getStatus()));
+        }
+
+        // 8. Chỉ hiện món còn hàng
+        if (Boolean.TRUE.equals(filter.getInStockOnly())) {
+            requiresVariantJoin = true;
+            Join<Product, ProductVariant> stockVariant = root.join("variants", JoinType.INNER);
+            Join<ProductVariant, Inventory> inventoryJoin = stockVariant.join("inventory", JoinType.INNER);
+            predicates.add(cb.greaterThan(
+                    cb.diff(inventoryJoin.get("quantity"), inventoryJoin.get("reservedQuantity")),
+                    0
+            ));
         }
 
         // Nếu có JOIN với bảng biến thể, bắt buộc dùng DISTINCT để không bị trùng lặp sản phẩm

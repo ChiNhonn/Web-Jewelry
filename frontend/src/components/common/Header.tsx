@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Search, User, LogOut, ShieldCheck, Package, Heart, ChevronDown } from 'lucide-react';
+import { notificationService, AppNotification } from '../../services/notificationService';
+import { ShoppingBag, Search, User, LogOut, ShieldCheck, Package, Heart, ChevronDown, Bell } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 
@@ -9,9 +10,19 @@ export const Header: React.FC = () => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [notes, setNotes] = useState<AppNotification[]>([]);
+  const [notesOpen, setNotesOpen] = useState(false);
   const { user, isAuthenticated, isAdmin, isStaff, openAuthModal, logout } = useAuth();
   const { totalQuantity } = useCart();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setNotes([]);
+      return;
+    }
+    notificationService.list().then(setNotes).catch(() => setNotes([]));
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -134,6 +145,14 @@ export const Header: React.FC = () => {
             >
               Vòng Tay & Lắc
             </Link>
+            <Link
+              to="/products?category=nhan-cuoi"
+              style={{ transition: 'color 0.2s ease' }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#FFFFFF')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+            >
+              Nhẫn Cưới
+            </Link>
             {(isAdmin || isStaff) && (
               <Link
                 to="/admin"
@@ -145,7 +164,7 @@ export const Header: React.FC = () => {
                   gap: '4px',
                 }}
               >
-                <ShieldCheck size={14} /> Quản Trị CMS
+                <ShieldCheck size={14} /> Quản trị
               </Link>
             )}
           </nav>
@@ -171,6 +190,40 @@ export const Header: React.FC = () => {
             >
               <Search size={18} />
             </button>
+
+            {isAuthenticated && (
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setNotesOpen((open) => !open)}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer', position: 'relative' }}
+                >
+                  <Bell size={18} />
+                  {notes.some((note) => !note.read) && (
+                    <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '8px', height: '8px', borderRadius: '50%', background: '#ff6584' }} />
+                  )}
+                </button>
+                {notesOpen && (
+                  <div style={{ position: 'absolute', right: 0, top: '36px', width: '300px', background: '#0e1017', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px', zIndex: 20 }}>
+                    {notes.length === 0 && <div style={{ color: 'var(--color-text-muted)', fontSize: '0.82rem' }}>Chưa có thông báo.</div>}
+                    {notes.slice(0, 6).map((note) => (
+                      <button
+                        key={note.id}
+                        onClick={() => {
+                          notificationService.markRead(note.id).catch(() => undefined);
+                          setNotes((prev) => prev.map((item) => item.id === note.id ? { ...item, read: true } : item));
+                          setNotesOpen(false);
+                          navigate('/account?tab=orders');
+                        }}
+                        style={{ display: 'block', width: '100%', textAlign: 'left', background: 'transparent', border: 'none', color: '#fff', padding: '8px 0', cursor: 'pointer' }}
+                      >
+                        <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{note.title}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>{note.message}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Shopping Cart Link */}
             <Link
@@ -272,7 +325,7 @@ export const Header: React.FC = () => {
                     <div style={{ padding: '8px 12px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Đăng nhập với tư cách</div>
                       <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-sakura-300)' }}>
-                        {user.roles.includes('ROLE_ADMIN') ? '👑 Quản Trị Viên (Admin)' : '💎 Khách Hàng VIP'}
+                        {user.roles.includes('ROLE_ADMIN') ? 'Quản trị viên' : 'Khách hàng'}
                       </div>
                     </div>
 
@@ -369,14 +422,15 @@ export const Header: React.FC = () => {
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.1)')}
                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                       >
-                        <ShieldCheck size={15} /> Trang Quản Trị CMS
+                        <ShieldCheck size={15} /> Trang quản trị
                       </Link>
                     )}
 
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         setUserDropdownOpen(false);
-                        logout();
+                        await logout();
+                        navigate('/');
                       }}
                       style={{
                         width: '100%',
@@ -409,7 +463,7 @@ export const Header: React.FC = () => {
                 className="btn-pill-white"
                 style={{ padding: '8px 18px', fontSize: '0.82rem', cursor: 'pointer' }}
               >
-                <User size={14} /> Đăng Nhập VIP
+                <User size={14} /> Đăng nhập
               </button>
             )}
           </div>

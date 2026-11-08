@@ -3,6 +3,8 @@ package com.jewelry.store.service;
 import com.jewelry.store.dto.common.PageResponse;
 import com.jewelry.store.dto.request.CancelOrderRequest;
 import com.jewelry.store.dto.request.CreateOrderRequest;
+import com.jewelry.store.dto.request.GuestCheckoutRequest;
+import com.jewelry.store.dto.request.GuestOrderActionRequest;
 import com.jewelry.store.dto.request.UpdateOrderStatusRequest;
 import com.jewelry.store.dto.response.OrderResponse;
 import com.jewelry.store.dto.response.OrderSummaryResponse;
@@ -11,6 +13,12 @@ import com.jewelry.store.entity.enums.OrderStatus;
 public interface OrderService {
 
     OrderResponse createOrder(Long userId, CreateOrderRequest request);
+
+    OrderResponse createGuestOrder(GuestCheckoutRequest request);
+
+    OrderResponse abandonGuestOrder(String orderCode, GuestOrderActionRequest request);
+
+    OrderResponse switchGuestOrderToCod(String orderCode, GuestOrderActionRequest request);
 
     PageResponse<OrderSummaryResponse> getUserOrders(Long userId, OrderStatus status, int page, int size);
 

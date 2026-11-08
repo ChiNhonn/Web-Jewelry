@@ -39,11 +39,20 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
-    public PaymentInitiateResponse initiatePayment(Long userId, String orderCode, HttpServletRequest request) {
+    public PaymentInitiateResponse initiatePayment(Long userId, String orderCode, String accessToken, HttpServletRequest request) {
         log.info("Initiating payment for orderCode: {}, userId: {}", orderCode, userId);
 
-        Order order = orderRepository.findByOrderCodeAndUserId(orderCode, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng không tồn tại hoặc không thuộc quyền sở hữu của bạn"));
+        Order order;
+        if (userId != null) {
+            order = orderRepository.findByOrderCodeAndUserId(orderCode, userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng không tồn tại hoặc không thuộc quyền sở hữu của bạn"));
+        } else {
+            order = orderRepository.findByOrderCode(orderCode)
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
+            if (order.getGuestAccessToken() == null || !order.getGuestAccessToken().equals(accessToken)) {
+                throw new BadRequestException("Mã xác nhận đơn không đúng");
+            }
+        }
 
         if (order.getPaymentStatus() == PaymentStatus.COMPLETED) {
             throw new BadRequestException("Đơn hàng này đã được thanh toán thành công trước đó");

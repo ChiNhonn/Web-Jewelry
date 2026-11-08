@@ -1,180 +1,163 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { paymentService } from '../services/paymentService';
+import { orderService } from '../services/orderService';
 import { VNPayReturnResponse } from '../types/payment.types';
-import { CheckCircle2, XCircle, ArrowRight, ShieldCheck, Sparkles, RefreshCw } from 'lucide-react';
+import { useCart } from '../context/CartContext';
+import { useToast } from '../context/ToastContext';
+import { CartItem } from '../types/cart.types';
+import { CheckCircle2, XCircle, ShieldCheck, RefreshCw } from 'lucide-react';
+
+interface PendingPayment {
+  orderCode: string;
+  accessToken?: string;
+  items: CartItem[];
+}
+
+const readPending = (): PendingPayment | null => {
+  try {
+    const raw = sessionStorage.getItem('aura_vnpay_pending');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
 
 export const PaymentReturnPage: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { replaceItems } = useCart();
+  const { success, error } = useToast();
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [askCod, setAskCod] = useState(false);
   const [result, setResult] = useState<VNPayReturnResponse | null>(null);
+  const pending = readPending();
 
   useEffect(() => {
     const paramsObj: Record<string, string> = {};
     searchParams.forEach((val, key) => {
       paramsObj[key] = val;
     });
-
     if (Object.keys(paramsObj).length === 0) {
       setLoading(false);
       return;
     }
-
     paymentService
       .processVNPayReturn(paramsObj)
-      .then((res: VNPayReturnResponse) => {
-        setResult(res);
-      })
-      .catch((err: unknown) => {
-        console.warn('Backend VNPay validation failed, parsing query params directly:', err);
-        // Direct query param fallback
-        const responseCode = searchParams.get('vnp_ResponseCode') || '00';
-        const isSuccess = responseCode === '00';
+      .then(setResult)
+      .catch(() => {
+        const responseCode = searchParams.get('vnp_ResponseCode') || '99';
         const rawAmount = parseInt(searchParams.get('vnp_Amount') || '0', 10);
-        const amount = rawAmount > 0 ? rawAmount / 100 : 48500000;
-
         setResult({
-          orderCode: searchParams.get('vnp_TxnRef') || 'AURA-VNP-2026',
-          transactionCode: searchParams.get('vnp_TransactionNo') || '14285900',
+          orderCode: searchParams.get('vnp_TxnRef') || pending?.orderCode || '',
+          transactionCode: searchParams.get('vnp_TransactionNo') || '',
           responseCode,
-          isSuccess,
-          amount,
-          bankCode: searchParams.get('vnp_BankCode') || 'NCB',
-          payDate: searchParams.get('vnp_PayDate') || new Date().toISOString(),
-          message: isSuccess
-            ? 'Giao dịch thanh toán VNPAY thành công.'
-            : 'Giao dịch không thành công hoặc bị hủy bỏ.',
+          isSuccess: responseCode === '00',
+          amount: rawAmount > 0 ? rawAmount / 100 : 0,
+          bankCode: searchParams.get('vnp_BankCode') || '',
+          payDate: searchParams.get('vnp_PayDate') || '',
+          message: responseCode === '00' ? 'Thanh toán VNPay thành công.' : 'Giao dịch bị hủy hoặc không thành công.',
         });
       })
-      .finally(() => {
-        setLoading(false);
-      });
+      .finally(() => setLoading(false));
   }, [searchParams]);
+
+  const orderCode = result?.orderCode || pending?.orderCode || '';
+  const accessToken = pending?.accessToken || '';
+
+  const retry = async () => {
+    if (!orderCode) return;
+    setBusy(true);
+    try {
+      const payment = await paymentService.initiatePayment(orderCode, accessToken);
+      if (payment.paymentUrl) window.location.href = payment.paymentUrl;
+      else error('Không tạo lại được liên kết VNPay.');
+    } catch {
+      error('Không thanh toán lại được.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmCod = async () => {
+    if (!orderCode || !accessToken) {
+      error('Thiếu mã đơn để đổi sang thanh toán khi nhận hàng.');
+      return;
+    }
+    setBusy(true);
+    try {
+      await orderService.switchToCod(orderCode, accessToken);
+      sessionStorage.removeItem('aura_vnpay_pending');
+      success('Đơn đã chuyển sang thanh toán khi nhận hàng.', 'Đã xác nhận');
+      navigate('/account?tab=orders');
+    } catch {
+      error('Không đổi được sang thanh toán khi nhận hàng.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const leaveForLater = async () => {
+    if (!orderCode || !accessToken) {
+      error('Không tìm thấy đơn vừa tạo để hoàn giỏ.');
+      return;
+    }
+    setBusy(true);
+    try {
+      await orderService.abandonOrder(orderCode, accessToken);
+      if (pending?.items?.length) replaceItems(pending.items);
+      sessionStorage.removeItem('aura_vnpay_pending');
+      success('Đã hủy đơn vừa tạo và trả sản phẩm về giỏ.', 'Để sau');
+      navigate('/cart');
+    } catch {
+      error('Không hoàn được đơn về giỏ hàng.');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   if (loading) {
     return (
       <div style={{ backgroundColor: '#050508', minHeight: '100vh', paddingTop: '150px', textAlign: 'center' }}>
         <RefreshCw size={36} color="#ff6584" style={{ animation: 'spin 1.5s linear infinite' }} />
-        <p style={{ marginTop: '16px', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-          Đang xác thực kết quả giao dịch từ VNPAY Sandbox...
-        </p>
+        <p style={{ marginTop: '16px', color: 'var(--color-text-secondary)' }}>Đang xác nhận kết quả VNPay sandbox...</p>
       </div>
     );
   }
 
-  const isSuccess = result ? result.isSuccess : true;
+  const isSuccess = !!result?.isSuccess;
 
   return (
     <div style={{ backgroundColor: '#050508', minHeight: '100vh', paddingTop: '120px', paddingBottom: '90px' }}>
       <div className="container" style={{ maxWidth: '640px' }}>
-        <div
-          style={{
-            backgroundColor: 'rgba(14, 16, 23, 0.9)',
-            border: `1px solid ${isSuccess ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
-            borderRadius: '20px',
-            padding: '48px 36px',
-            textAlign: 'center',
-            boxShadow: `0 25px 60px rgba(0, 0, 0, 0.9), 0 0 50px ${
-              isSuccess ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'
-            }`,
-          }}
-        >
-          {/* Status Icon */}
-          <div
-            style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              backgroundColor: isSuccess ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-              border: `2px solid ${isSuccess ? '#10B981' : '#EF4444'}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 24px',
-            }}
-          >
-            {isSuccess ? <CheckCircle2 size={44} color="#10B981" /> : <XCircle size={44} color="#EF4444" />}
-          </div>
-
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.78rem',
-              letterSpacing: '0.15em',
-              color: isSuccess ? '#10B981' : '#EF4444',
-              textTransform: 'uppercase',
-              fontWeight: 600,
-              marginBottom: '8px',
-            }}
-          >
-            <Sparkles size={14} /> VNPAY SECURE PAYMENT
-          </div>
-
-          <h1 style={{ fontSize: '2.1rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '8px' }}>
-            {isSuccess ? 'Thanh Toán Thành Công!' : 'Giao Dịch Bị Gián Đoạn'}
-          </h1>
-
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.92rem', marginBottom: '32px' }}>
-            {result?.message || (isSuccess ? 'Đơn hàng của quý khách đã được xác nhận thanh toán.' : 'Giao dịch không thành công.')}
-          </p>
-
-          {/* Digital Receipt Card */}
-          <div
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '12px',
-              padding: '20px',
-              textAlign: 'left',
-              marginBottom: '32px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem' }}>
-              <span style={{ color: 'var(--color-text-muted)' }}>Mã đơn hàng:</span>
-              <span style={{ color: 'var(--color-sakura-300)', fontWeight: 700 }}>
-                {result?.orderCode || 'AURA-2026'}
-              </span>
-            </div>
-
-            {result?.transactionCode && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem' }}>
-                <span style={{ color: 'var(--color-text-muted)' }}>Mã tham chiếu VNPAY:</span>
-                <span style={{ color: '#FFFFFF' }}>{result.transactionCode}</span>
-              </div>
-            )}
-
-            {result?.bankCode && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem' }}>
-                <span style={{ color: 'var(--color-text-muted)' }}>Ngân hàng giao dịch:</span>
-                <span style={{ color: '#FFFFFF' }}>{result.bankCode}</span>
-              </div>
-            )}
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-              <span style={{ color: '#FFFFFF', fontWeight: 600 }}>Số tiền thanh toán:</span>
-              <span style={{ color: 'var(--color-gold-400)', fontWeight: 800, fontSize: '1.15rem' }}>
-                {(result?.amount || 48500000).toLocaleString('vi-VN')}₫
-              </span>
+        <div style={{ backgroundColor: 'rgba(14, 16, 23, 0.9)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '40px 28px', textAlign: 'center' }}>
+          {isSuccess ? <CheckCircle2 size={44} color="#10B981" /> : <XCircle size={44} color="#EF4444" />}
+          <h1 style={{ color: '#fff', margin: '16px 0 8px' }}>{isSuccess ? 'Thanh toán thành công' : 'Thanh toán VNPay chưa hoàn tất'}</h1>
+          <p style={{ color: 'var(--color-text-secondary)' }}>{result?.message || 'Giao dịch sandbox, không trừ tiền thật.'}</p>
+          <div style={{ margin: '20px 0', color: '#fff' }}>
+            <div>Mã đơn: {orderCode || '—'}</div>
+            <div style={{ color: 'var(--color-gold-400)', fontWeight: 700, marginTop: '8px' }}>
+              {(result?.amount || 0).toLocaleString('vi-VN')}₫
             </div>
           </div>
-
-          {/* CTA Actions */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
-            <Link to="/account?tab=orders" className="btn-pill-sakura" style={{ padding: '12px 28px' }}>
-              Xem Đơn Hàng Của Tôi <ArrowRight size={16} />
-            </Link>
-            <Link to="/products" className="btn-outline-pill" style={{ padding: '12px 28px' }}>
-              Tiếp Tục Mua Sắm
-            </Link>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.74rem', color: 'var(--color-text-muted)', marginTop: '28px' }}>
-            <ShieldCheck size={14} color="#ff6584" /> Xác thực biên nhận điện tử theo tiêu chuẩn VNPAY Merchant
+          {isSuccess ? (
+            <Link to="/account?tab=orders" className="btn-pill-sakura" style={{ padding: '12px 24px' }}>Xem đơn hàng</Link>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button className="btn-pill-sakura" disabled={busy} onClick={retry} style={{ padding: '12px' }}>Thanh toán lại</button>
+              {!askCod ? (
+                <button className="btn-outline-pill" disabled={busy} onClick={() => setAskCod(true)} style={{ padding: '12px' }}>Đổi sang thanh toán khi nhận hàng</button>
+              ) : (
+                <button className="btn-outline-pill" disabled={busy} onClick={confirmCod} style={{ padding: '12px' }}>Xác nhận đổi sang COD</button>
+              )}
+              <button disabled={busy} onClick={leaveForLater} style={{ background: 'transparent', color: 'var(--color-text-secondary)', border: 'none', cursor: 'pointer' }}>
+                Để sau
+              </button>
+            </div>
+          )}
+          <div style={{ marginTop: '18px', fontSize: '0.78rem', color: 'var(--color-text-muted)', display: 'flex', justifyContent: 'center', gap: '6px' }}>
+            <ShieldCheck size={14} /> VNPay sandbox, tiền ảo
           </div>
         </div>
       </div>

@@ -32,6 +32,24 @@ export const adminProductService = {
   /**
    * Get product detail by ID (Admin view)
    */
+  async createProduct(payload: Record<string, unknown>): Promise<ProductDetail> {
+    const response = await apiClient.post<ApiResponse<ProductDetail>>('/api/v1/admin/products', payload);
+    return response.data.data;
+  },
+
+  async updateProduct(id: number, payload: Record<string, unknown>): Promise<ProductDetail> {
+    const response = await apiClient.put<ApiResponse<ProductDetail>>(`/api/v1/admin/products/${id}`, payload);
+    return response.data.data;
+  },
+
+  async stopSelling(id: number): Promise<void> {
+    await apiClient.delete(`/api/v1/admin/products/${id}`);
+  },
+
+  async purgeProduct(id: number): Promise<void> {
+    await apiClient.delete(`/api/v1/admin/products/${id}/permanent`);
+  },
+
   async getProductById(id: number): Promise<ProductDetail> {
     const response = await apiClient.get<ApiResponse<ProductDetail>>(
       `/api/v1/admin/products/${id}`

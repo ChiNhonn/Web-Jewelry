@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 
 export const CheckoutPage: React.FC = () => {
-  const { items, subtotal, appliedCoupon, discountAmount, finalTotal, clearCart } = useCart();
+  const { items, subtotal, shippingFee, appliedCoupon, discountAmount, finalTotal, clearCart } = useCart();
   const { user, isAuthenticated, openAuthModal } = useAuth();
   const { success, error, info } = useToast();
   const navigate = useNavigate();
@@ -35,18 +35,18 @@ export const CheckoutPage: React.FC = () => {
     receiverName: user?.fullName || '',
     phone: user?.phone || '',
     streetAddress: '',
-    ward: 'Phường Bến Nghé',
-    district: 'Quận 1',
-    province: 'TP. Hồ Chí Minh',
+    ward: '',
+    district: '',
+    province: '',
     customerNote: '',
   });
 
   // Payment Selection
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('VNPAY');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('COD');
   const [submitting, setSubmitting] = useState(false);
 
   // VietQR Modal State
-  const [vietQrData, setVietQrData] = useState<BankTransferDetails | null>(null);
+  const [vietQrData] = useState<BankTransferDetails | null>(null);
   const [orderCreatedCode, setOrderCreatedCode] = useState<string | null>(null);
 
   // Load Saved Addresses if logged in
@@ -73,6 +73,29 @@ export const CheckoutPage: React.FC = () => {
         .catch(() => {});
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (localStorage.getItem('aura_geo_prompted')) return;
+    localStorage.setItem('aura_geo_prompted', '1');
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=json&accept-language=vi&lat=${position.coords.latitude}&lon=${position.coords.longitude}`;
+        const response = await fetch(url, { headers: { 'Accept-Language': 'vi' } });
+        const data = await response.json();
+        const address = data.address || {};
+        setShippingForm((prev) => ({
+          ...prev,
+          streetAddress: prev.streetAddress || [address.house_number, address.road].filter(Boolean).join(' ') || data.display_name || '',
+          ward: prev.ward || address.suburb || address.quarter || address.neighbourhood || '',
+          district: prev.district || address.city_district || address.county || address.town || '',
+          province: prev.province || address.city || address.state || '',
+        }));
+      } catch {
+        /* địa chỉ vẫn nhập tay */
+      }
+    });
+  }, []);
 
   if (items.length === 0 && !orderCreatedCode) {
     return (
@@ -101,71 +124,69 @@ export const CheckoutPage: React.FC = () => {
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!shippingForm.receiverName || !shippingForm.phone || !shippingForm.streetAddress) {
-      error('Vui lòng điền đầy đủ họ tên, số điện thoại và địa chỉ giao nhận.', 'Thiếu Thông Tin');
+    if (!shippingForm.receiverName || !shippingForm.phone || !shippingForm.streetAddress || !shippingForm.ward || !shippingForm.district || !shippingForm.province) {
+      error('Vui lòng điền tên người nhận, số điện thoại và địa chỉ đầy đủ.', 'Thiếu thông tin');
+      return;
+    }
+    if (!/^(0|\+84)[35789][0-9]{8}$/.test(shippingForm.phone.replace(/\s/g, ''))) {
+      error('Số điện thoại chưa đúng định dạng Việt Nam.', 'Số điện thoại');
       return;
     }
 
     setSubmitting(true);
     try {
-      // 1. Call Order Checkout
-      const order = await orderService.checkout({
-        shippingAddressId: selectedAddressId || undefined,
-        shippingAddress: {
-          receiverName: shippingForm.receiverName,
-          phone: shippingForm.phone,
-          streetAddress: shippingForm.streetAddress,
-          ward: shippingForm.ward,
-          district: shippingForm.district,
-          province: shippingForm.province,
-        },
-        paymentMethod,
-        couponCode: appliedCoupon?.code,
-        customerNote: shippingForm.customerNote,
-      });
+      const address = {
+        receiverName: shippingForm.receiverName,
+        phone: shippingForm.phone.replace(/\s/g, ''),
+        streetAddress: shippingForm.streetAddress,
+        ward: shippingForm.ward,
+        district: shippingForm.district,
+        province: shippingForm.province,
+      };
+      const order = isAuthenticated
+        ? await orderService.checkout({
+            shippingAddressId: selectedAddressId || undefined,
+            shippingAddress: address,
+            paymentMethod,
+            couponCode: appliedCoupon?.code,
+            customerNote: shippingForm.customerNote,
+          })
+        : await orderService.guestCheckout({
+            shippingAddress: address,
+            paymentMethod,
+            couponCode: appliedCoupon?.code,
+            customerNote: shippingForm.customerNote,
+            items: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
+          });
 
       setOrderCreatedCode(order.orderCode);
 
-      // 2. Handle Payment Strategy
       if (paymentMethod === 'VNPAY') {
-        info('Đang kết nối cổng thanh toán an toàn VNPAY Sandbox...', 'Chuyển Hướng');
-        const paymentRes = await paymentService.initiatePayment(order.orderCode);
+        info('Đang chuyển sang VNPay sandbox. Đây là tiền ảo, không trừ tiền thật.', 'Thanh toán');
+        const paymentRes = await paymentService.initiatePayment(order.orderCode, order.guestAccessToken);
         if (paymentRes.paymentUrl) {
+          sessionStorage.setItem('aura_vnpay_pending', JSON.stringify({
+            orderCode: order.orderCode,
+            accessToken: order.guestAccessToken,
+            items,
+          }));
           clearCart();
           window.location.href = paymentRes.paymentUrl;
           return;
         }
-      } else if (paymentMethod === 'BANK_TRANSFER' || paymentMethod === ('VIETQR' as unknown as PaymentMethodType)) {
-        const paymentRes = await paymentService.initiatePayment(order.orderCode);
-        if (paymentRes.bankTransfer) {
-          setVietQrData(paymentRes.bankTransfer);
-          clearCart();
-          success('Đơn hàng đã được tạo. Vui lòng quét mã VietQR để hoàn tất.', 'Thanh Toán VietQR');
-          return;
-        }
+        error('Không tạo được liên kết VNPay.', 'Thanh toán');
+        return;
       }
 
-      // COD or Standard Success
       clearCart();
-      success(`Đơn hàng #${order.orderCode} đã được khởi tạo thành công!`, 'Đặt Hàng Thành Công');
+      success(`Đơn ${order.orderCode} đã được tạo. Thanh toán khi nhận hàng.`, 'Đặt hàng thành công');
     } catch (err: unknown) {
-      console.warn('Backend order checkout failed, generating luxury offline confirmation:', err);
-      // Seamless luxury offline demo order fallback
-      const mockCode = `AURA-${Date.now().toString().slice(-6)}`;
-      setOrderCreatedCode(mockCode);
-      if (paymentMethod === 'BANK_TRANSFER' || paymentMethod === ('VIETQR' as unknown as PaymentMethodType)) {
-        setVietQrData({
-          bankId: 'MB',
-          accountNo: '0987654321',
-          accountName: 'AURA FINE JEWELRY',
-          amount: finalTotal,
-          orderCode: mockCode,
-          transferContent: `AURA ${mockCode}`,
-          qrCodeUrl: `https://img.vietqr.io/image/MB-0987654321-compact2.png?amount=${finalTotal}&addInfo=AURA%20${mockCode}&accountName=AURA%20FINE%20JEWELRY`,
-        });
+      let message = 'Không đặt được hàng. Vui lòng kiểm tra lại thông tin và tồn kho.';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosErr = err as { response?: { data?: { message?: string } } };
+        if (axiosErr.response?.data?.message) message = axiosErr.response.data.message;
       }
-      clearCart();
-      success(`Đơn hàng #${mockCode} đã được tiếp nhận bởi xưởng chế tác!`, 'Đặt Hàng Thành Công');
+      error(message, 'Đặt hàng thất bại');
     } finally {
       setSubmitting(false);
     }
@@ -226,7 +247,7 @@ export const CheckoutPage: React.FC = () => {
               Đặt Hàng Hoàng Gia Thành Công!
             </h1>
             <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.98rem', maxWidth: '520px', margin: '0 auto 20px', lineHeight: 1.6 }}>
-              Cảm ơn quý khách đã tin tưởng lựa chọn kiệt tác từ <strong>AURA Fine Jewelry</strong>. Chuyên viên chăm sóc VIP sẽ liên hệ trong ít phút để xác nhận ni nhẫn và giờ bàn giao.
+              Đơn hàng đã được ghi nhận. Bạn có thể theo dõi trạng thái trong mục đơn hàng.
             </p>
 
             <div
@@ -392,7 +413,7 @@ export const CheckoutPage: React.FC = () => {
                     }}
                   >
                     <div style={{ fontSize: '0.86rem', color: 'var(--color-sakura-300)' }}>
-                      Quý khách đã là thành viên VIP của AURA?
+                      Đã có tài khoản?
                     </div>
                     <button
                       type="button"
@@ -532,6 +553,7 @@ export const CheckoutPage: React.FC = () => {
                       </label>
                       <input
                         type="text"
+                        required
                         value={shippingForm.province}
                         onChange={(e) => setShippingForm({ ...shippingForm, province: e.target.value })}
                         style={{
@@ -552,6 +574,7 @@ export const CheckoutPage: React.FC = () => {
                       </label>
                       <input
                         type="text"
+                        required
                         value={shippingForm.district}
                         onChange={(e) => setShippingForm({ ...shippingForm, district: e.target.value })}
                         style={{
@@ -572,6 +595,7 @@ export const CheckoutPage: React.FC = () => {
                       </label>
                       <input
                         type="text"
+                        required
                         value={shippingForm.ward}
                         onChange={(e) => setShippingForm({ ...shippingForm, ward: e.target.value })}
                         style={{
@@ -779,7 +803,7 @@ export const CheckoutPage: React.FC = () => {
                     )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
                       <span>Bảo hiểm & Vận chuyển:</span>
-                      <span style={{ color: '#10B981', fontWeight: 600 }}>MIỄN PHÍ</span>
+                      <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{shippingFee === 0 ? 'Miễn phí' : `${shippingFee.toLocaleString('vi-VN')}₫`}</span>
                     </div>
                   </div>
 
@@ -798,7 +822,7 @@ export const CheckoutPage: React.FC = () => {
                     className="btn-pill-sakura"
                     style={{ width: '100%', padding: '15px', fontSize: '0.95rem', cursor: submitting ? 'wait' : 'pointer' }}
                   >
-                    {submitting ? 'Đang tạo đơn hàng...' : 'Xác Nhận & Đặt Hàng VIP'} <ArrowRight size={18} />
+                    {submitting ? 'Đang tạo đơn hàng...' : 'Xác nhận đặt hàng'} <ArrowRight size={18} />
                   </button>
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '16px' }}>

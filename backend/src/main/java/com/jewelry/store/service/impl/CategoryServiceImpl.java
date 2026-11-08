@@ -44,6 +44,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .slug(slug)
                 .description(request.getDescription())
                 .imageUrl(request.getImageUrl())
+                .promotionPercent(request.getPromotionPercent())
                 .status(request.getStatus() != null ? request.getStatus() : CategoryStatus.ACTIVE)
                 .parent(parent)
                 .build();
@@ -68,6 +69,7 @@ public class CategoryServiceImpl implements CategoryService {
         category.setName(request.getName().trim());
         category.setDescription(request.getDescription());
         category.setImageUrl(request.getImageUrl());
+        category.setPromotionPercent(request.getPromotionPercent());
         if (request.getStatus() != null) {
             category.setStatus(request.getStatus());
         }

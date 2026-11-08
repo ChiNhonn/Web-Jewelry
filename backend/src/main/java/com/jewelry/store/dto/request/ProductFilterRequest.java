@@ -25,6 +25,9 @@ public class ProductFilterRequest {
     private String brand;
     private Boolean isFeatured;
 
+    /** Chỉ lấy sản phẩm còn ít nhất một biến thể còn hàng. */
+    private Boolean inStockOnly;
+
     @Builder.Default
     private ProductStatus status = ProductStatus.ACTIVE;
 

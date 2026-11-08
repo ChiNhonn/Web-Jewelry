@@ -41,4 +41,9 @@ export const cartService = {
   async clearCart(): Promise<void> {
     await apiClient.delete<ApiResponse<void>>('/api/v1/cart');
   },
+
+  async mergeItems(items: AddToCartRequest[]): Promise<Cart> {
+    const response = await apiClient.post<ApiResponse<Cart>>('/api/v1/cart/merge', items);
+    return response.data.data;
+  },
 };

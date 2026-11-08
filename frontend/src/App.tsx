@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastProvider } from './context/ToastContext';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { CompareProvider } from './context/CompareContext';
 import { Header } from './components/common/Header';
 import { Footer } from './components/common/Footer';
 import { AuthModal } from './components/auth/AuthModal';
@@ -33,6 +34,9 @@ const CustomerPortalPage = lazy(() =>
 );
 const AdminPortalPage = lazy(() =>
   import('./pages/AdminPortalPage').then((m) => ({ default: m.AdminPortalPage }))
+);
+const ComparePage = lazy(() =>
+  import('./pages/ComparePage').then((m) => ({ default: m.ComparePage }))
 );
 
 /**
@@ -86,6 +90,7 @@ export const App: React.FC = () => {
       <ToastProvider>
         <AuthProvider>
           <CartProvider>
+            <CompareProvider>
             <BrowserRouter>
               <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#050508' }}>
                 <Header />
@@ -96,6 +101,7 @@ export const App: React.FC = () => {
                       <Route path="/" element={<HomePage />} />
                       <Route path="/products" element={<ProductCatalogPage />} />
                       <Route path="/products/:slug" element={<ProductDetailPage />} />
+                      <Route path="/compare" element={<ComparePage />} />
                       <Route path="/cart" element={<CartPage />} />
                       <Route path="/checkout" element={<CheckoutPage />} />
                       <Route path="/payment/vnpay-return" element={<PaymentReturnPage />} />
@@ -103,7 +109,7 @@ export const App: React.FC = () => {
                       {/* Customer Portal */}
                       <Route path="/account" element={<CustomerPortalPage />} />
 
-                      {/* Admin CMS & Operations */}
+                      {/* Quản trị */}
                       <Route path="/admin" element={<AdminPortalPage />} />
 
                       {/* Fallback */}
@@ -116,6 +122,7 @@ export const App: React.FC = () => {
                 <AuthModal />
               </div>
             </BrowserRouter>
+            </CompareProvider>
           </CartProvider>
         </AuthProvider>
       </ToastProvider>

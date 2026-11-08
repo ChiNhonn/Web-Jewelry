@@ -19,6 +19,7 @@ public class CategoryResponse {
     private String slug;
     private String description;
     private String imageUrl;
+    private Integer promotionPercent;
     private CategoryStatus status;
     private Long parentId;
     private List<CategoryResponse> children;

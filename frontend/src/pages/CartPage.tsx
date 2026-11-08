@@ -21,6 +21,7 @@ export const CartPage: React.FC = () => {
     items,
     totalQuantity,
     subtotal,
+    shippingFee,
     appliedCoupon,
     discountAmount,
     finalTotal,
@@ -315,7 +316,7 @@ export const CartPage: React.FC = () => {
               }}
             >
               <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '20px' }}>
-                Tổng Kết Đơn Hàng VIP
+                Tóm tắt đơn hàng
               </h3>
 
               {/* Coupon Form */}
@@ -398,7 +399,7 @@ export const CartPage: React.FC = () => {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', color: 'var(--color-text-secondary)' }}>
                   <span>Bảo hiểm & Vận chuyển đặc biệt:</span>
-                  <span style={{ color: '#10B981', fontWeight: 600 }}>MIỄN PHÍ VIP</span>
+                  <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{shippingFee === 0 ? 'Miễn phí' : `${shippingFee.toLocaleString('vi-VN')}₫`}</span>
                 </div>
               </div>
 
@@ -416,7 +417,7 @@ export const CartPage: React.FC = () => {
                 className="btn-pill-sakura"
                 style={{ width: '100%', padding: '15px', fontSize: '0.95rem', cursor: 'pointer' }}
               >
-                Tiến Hành Đặt Hàng VIP <ArrowRight size={18} />
+                Đặt hàng <ArrowRight size={18} />
               </button>
 
               {/* Assurance Trust Points */}

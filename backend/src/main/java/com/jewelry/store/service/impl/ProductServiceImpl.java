@@ -17,6 +17,7 @@ import com.jewelry.store.service.ProductService;
 import com.jewelry.store.util.SlugUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +42,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductVariantRepository variantRepository;
     private final com.jewelry.store.repository.ProductImageRepository productImageRepository;
     private final ProductMapper productMapper;
+    private final EntityManager entityManager;
 
     @Override
     @Transactional
@@ -64,6 +66,10 @@ public class ProductServiceImpl implements ProductService {
                 .description(request.getDescription())
                 .shortDescription(request.getShortDescription())
                 .materialOverview(request.getMaterialOverview())
+                .weightGrams(request.getWeightGrams())
+                .stoneType(request.getStoneType())
+                .clarity(request.getClarity())
+                .warranty(request.getWarranty())
                 .brand(request.getBrand() != null ? request.getBrand().trim() : "AURA JEWELRY")
                 .isFeatured(request.isFeatured())
                 .status(request.getStatus() != null ? request.getStatus() : ProductStatus.ACTIVE)
@@ -134,6 +140,10 @@ public class ProductServiceImpl implements ProductService {
         product.setDescription(request.getDescription());
         product.setShortDescription(request.getShortDescription());
         product.setMaterialOverview(request.getMaterialOverview());
+        product.setWeightGrams(request.getWeightGrams());
+        product.setStoneType(request.getStoneType());
+        product.setClarity(request.getClarity());
+        product.setWarranty(request.getWarranty());
         if (request.getBrand() != null) product.setBrand(request.getBrand().trim());
         if (request.getIsFeatured() != null) product.setFeatured(request.getIsFeatured());
         if (request.getStatus() != null) product.setStatus(request.getStatus());
@@ -152,6 +162,29 @@ public class ProductServiceImpl implements ProductService {
         // Soft delete: chuyển sang trạng thái INACTIVE để đảm bảo tính toàn vẹn dữ liệu đơn hàng cũ
         product.setStatus(ProductStatus.INACTIVE);
         productRepository.save(product);
+    }
+
+    @Override
+    @Transactional
+    public void purgeProduct(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
+        Long used = entityManager.createQuery(
+                        "select count(oi.id) from OrderItem oi where oi.variant.product.id = :id", Long.class)
+                .setParameter("id", id)
+                .getSingleResult();
+        if (used != null && used > 0) {
+            throw new BadRequestException("Sản phẩm đã có trong đơn hàng. Hãy ngừng bán thay vì xóa.");
+        }
+        entityManager.createQuery("delete from CartItem c where c.variant.product.id = :id")
+                .setParameter("id", id).executeUpdate();
+        entityManager.createQuery("delete from Wishlist w where w.product.id = :id")
+                .setParameter("id", id).executeUpdate();
+        entityManager.createQuery("delete from ReviewImage ri where ri.review.product.id = :id")
+                .setParameter("id", id).executeUpdate();
+        entityManager.createQuery("delete from Review r where r.product.id = :id")
+                .setParameter("id", id).executeUpdate();
+        productRepository.delete(product);
     }
 
     @Override
@@ -192,9 +225,31 @@ public class ProductServiceImpl implements ProductService {
             sort = "asc".equalsIgnoreCase(sortDir) ? Sort.by("createdAt").ascending() : Sort.by("createdAt").descending();
         }
 
-        Pageable pageable = PageRequest.of(filterRequest.getPage(), filterRequest.getSize(), sort);
         ProductSpecification spec = new ProductSpecification(filterRequest);
+        boolean sortByPrice = "minPrice".equalsIgnoreCase(sortBy) || "price".equalsIgnoreCase(sortBy);
+        if (sortByPrice) {
+            Page<Product> all = productRepository.findAll(spec, PageRequest.of(0, 300, Sort.by("id").ascending()));
+            List<ProductSummaryResponse> summaries = new java.util.ArrayList<>(productMapper.toProductSummaryResponseList(all.getContent()));
+            summaries.sort((left, right) -> {
+                java.math.BigDecimal l = left.getMinPrice() == null ? java.math.BigDecimal.ZERO : left.getMinPrice();
+                java.math.BigDecimal r = right.getMinPrice() == null ? java.math.BigDecimal.ZERO : right.getMinPrice();
+                return "asc".equalsIgnoreCase(sortDir) ? l.compareTo(r) : r.compareTo(l);
+            });
+            int from = Math.min(filterRequest.getPage() * filterRequest.getSize(), summaries.size());
+            int to = Math.min(from + filterRequest.getSize(), summaries.size());
+            int totalPages = summaries.isEmpty() ? 1 : (int) Math.ceil(summaries.size() / (double) filterRequest.getSize());
+            return PageResponse.<ProductSummaryResponse>builder()
+                    .content(summaries.subList(from, to))
+                    .page(filterRequest.getPage())
+                    .size(filterRequest.getSize())
+                    .totalElements(summaries.size())
+                    .totalPages(totalPages)
+                    .first(filterRequest.getPage() == 0)
+                    .last(filterRequest.getPage() >= totalPages - 1)
+                    .build();
+        }
 
+        Pageable pageable = PageRequest.of(filterRequest.getPage(), filterRequest.getSize(), sort);
         Page<Product> page = productRepository.findAll(spec, pageable);
         List<ProductSummaryResponse> summaries = productMapper.toProductSummaryResponseList(page.getContent());
 

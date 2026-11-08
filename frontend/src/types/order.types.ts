@@ -48,6 +48,7 @@ export interface Order {
   shippingFee: number;
   totalAmount: number;
   couponCode?: string;
+  guestAccessToken?: string;
   shippingAddressSnapshot: string;
   customerNote?: string;
   items: OrderItem[];
@@ -85,6 +86,14 @@ export interface CreateOrderRequest {
   paymentMethod: PaymentMethodType;
   couponCode?: string;
   customerNote?: string;
+}
+
+export interface GuestCheckoutRequest {
+  shippingAddress: NonNullable<CreateOrderRequest['shippingAddress']>;
+  paymentMethod: PaymentMethodType;
+  couponCode?: string;
+  customerNote?: string;
+  items: { variantId: number; quantity: number }[];
 }
 
 export interface CouponValidation {

@@ -12,6 +12,8 @@ public interface ProductService {
 
     void deleteProduct(Long id);
 
+    void purgeProduct(Long id);
+
     ProductDetailResponse getProductDetailBySlug(String slug);
 
     ProductDetailResponse getProductDetailById(Long id);

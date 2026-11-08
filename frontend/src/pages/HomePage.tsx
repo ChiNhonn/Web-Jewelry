@@ -31,8 +31,45 @@ export const HomePage: React.FC = () => {
   // Active Category Tab
   const [activeTab, setActiveTab] = useState<string>('all');
 
+  const spotlight = [
+    {
+      tab: 'nhan',
+      name: 'Nhẫn Solitaire Diamond 2ct',
+      price: '48.500.000₫',
+      description: 'Kim cương tự nhiên 2.0 carat chuẩn GIA F/VVS1, giác cắt Brilliant đính trên nền vàng trắng Ý 18K nguyên khối.',
+      meta: '42 mẫu ni nhẫn sẵn có',
+      href: '/products/nhan-solitaire-diamond-2ct',
+      badge: 'Giám định đá quý',
+      tone: 'sakura' as const,
+      icon: 'gem' as const,
+    },
+    {
+      tab: 'day-chuyen',
+      name: 'Dây Chuyền Aurora Italian 750',
+      price: '18.200.000₫',
+      description: 'Sợi dây vàng Ý 750 liên kết mắt xích mềm mại kết hợp mặt dây đính kim cương tấm tự nhiên tỏa sáng huyền ảo.',
+      meta: 'Chiều dài 42cm - 45cm',
+      href: '/products/day-chuyen-royal-crown',
+      badge: 'Vàng Ý 18K',
+      tone: 'gold' as const,
+      icon: 'compass' as const,
+    },
+    {
+      tab: 'vong-tay',
+      name: 'Lắc Tay Tennis Diamond Pave',
+      price: '65.000.000₫',
+      description: 'Chuỗi 54 viên kim cương đồng nhất giác cắt Round Brilliant đính chấu 4 chấu chắc chắn trên vàng hồng 18K.',
+      meta: 'Bản giới hạn 18 chiếc',
+      href: '/products/vong-tay-tennis-diamond-5ct',
+      badge: 'ROYAL TENNIS',
+      tone: 'sakura' as const,
+      icon: 'sparkles' as const,
+    },
+  ];
+  const visibleSpotlight = spotlight.filter((item) => activeTab === 'all' || item.tab === activeTab);
+
   // Trigger Scroll Reveal Hook
-  useScrollReveal();
+  useScrollReveal(activeTab);
 
   const fetchHealth = async () => {
     setLoadingHealth(true);
@@ -161,7 +198,7 @@ export const HomePage: React.FC = () => {
               <div>
                 <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.1 }}>24/7</div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Cố vấn VIP
+                  Cố vấn riêng
                 </div>
               </div>
             </div>
@@ -257,13 +294,21 @@ export const HomePage: React.FC = () => {
           </div>
 
           {/* Cards Grid with Staggered Scroll Reveal */}
+          {visibleSpotlight.length === 0 ? (
+            <p style={{ textAlign: 'center', color: 'var(--color-text-secondary)', padding: '48px 0' }}>
+              Nhóm này chưa có tác phẩm trưng bày. Xem toàn bộ trong Bộ sưu tập.
+            </p>
+          ) : (
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
             gap: '28px',
           }}>
-            {/* Card 1 */}
-            <div className="luxury-glass-card reveal delay-100" style={{ position: 'relative' }}>
+            {visibleSpotlight.map((item, index) => {
+              const Icon = item.icon === 'gem' ? Gem : item.icon === 'compass' ? Compass : Sparkles;
+              const sakura = item.tone === 'sakura';
+              return (
+            <div key={item.tab} className={`luxury-glass-card reveal delay-${(index + 1) * 100}`} style={{ position: 'relative' }}>
               <div style={{
                 position: 'relative',
                 height: '240px',
@@ -276,20 +321,24 @@ export const HomePage: React.FC = () => {
                 overflow: 'hidden',
                 border: '1px solid rgba(255, 255, 255, 0.06)',
               }}>
-                <Gem size={72} color="#ff9bb2" style={{ filter: 'drop-shadow(0 0 20px rgba(255,101,132,0.4))' }} />
+                <Icon size={72} color={sakura ? '#ff9bb2' : '#f3d08c'} style={{ filter: sakura ? 'drop-shadow(0 0 20px rgba(255,101,132,0.4))' : 'drop-shadow(0 0 20px rgba(212,175,55,0.4))' }} />
                 <span style={{
                   position: 'absolute',
                   top: '14px',
                   left: '14px',
-                  backgroundColor: 'rgba(255, 101, 132, 0.15)',
-                  border: '1px solid rgba(255, 101, 132, 0.35)',
-                  color: 'var(--color-sakura-300)',
+                  maxWidth: 'calc(100% - 72px)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  backgroundColor: sakura ? 'rgba(255, 101, 132, 0.15)' : 'rgba(212, 175, 55, 0.15)',
+                  border: sakura ? '1px solid rgba(255, 101, 132, 0.35)' : '1px solid rgba(212, 175, 55, 0.35)',
+                  color: sakura ? 'var(--color-sakura-300)' : 'var(--color-gold-300)',
                   fontSize: '0.72rem',
                   fontWeight: 600,
                   padding: '4px 10px',
                   borderRadius: '9999px',
                 }}>
-                  GIA CERTIFIED
+                  {item.badge}
                 </span>
                 <button
                   title="Yêu thích"
@@ -311,152 +360,25 @@ export const HomePage: React.FC = () => {
                 </button>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#FFFFFF' }}>Nhẫn Solitaire Diamond 2ct</h3>
-                <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-gold-400)' }}>48.500.000₫</span>
+              <div style={{ marginBottom: '8px' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#FFFFFF', lineHeight: 1.35 }}>{item.name}</h3>
+                <div style={{ marginTop: '6px', fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-gold-400)' }}>{item.price}</div>
               </div>
               <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', lineHeight: 1.6, marginBottom: '20px' }}>
-                Kim cương tự nhiên 2.0 carat chuẩn GIA F/VVS1, giác cắt Brilliant đính trên nền vàng trắng Ý 18K nguyên khối.
+                {item.description}
               </p>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>42 mẫu ni nhẫn sẵn có</span>
-                <Link to="/products/nhan-solitaire-diamond-2ct" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-sakura-300)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{item.meta}</span>
+                <Link to={item.href} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-sakura-300)', whiteSpace: 'nowrap' }}>
                   Xem tác phẩm <ChevronRight size={14} />
                 </Link>
               </div>
             </div>
-
-            {/* Card 2 */}
-            <div className="luxury-glass-card reveal delay-200" style={{ position: 'relative' }}>
-              <div style={{
-                position: 'relative',
-                height: '240px',
-                borderRadius: '8px',
-                background: 'radial-gradient(circle at center, #1e2230 0%, #0d0f15 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '22px',
-                overflow: 'hidden',
-                border: '1px solid rgba(255, 255, 255, 0.06)',
-              }}>
-                <Compass size={72} color="#f3d08c" style={{ filter: 'drop-shadow(0 0 20px rgba(212,175,55,0.4))' }} />
-                <span style={{
-                  position: 'absolute',
-                  top: '14px',
-                  left: '14px',
-                  backgroundColor: 'rgba(212, 175, 55, 0.15)',
-                  border: '1px solid rgba(212, 175, 55, 0.35)',
-                  color: 'var(--color-gold-300)',
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  padding: '4px 10px',
-                  borderRadius: '9999px',
-                }}>
-                  ITALIAN 18K GOLD
-                </span>
-                <button
-                  title="Yêu thích"
-                  style={{
-                    position: 'absolute',
-                    top: '14px',
-                    right: '14px',
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--color-text-secondary)',
-                  }}
-                >
-                  <Heart size={16} />
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#FFFFFF' }}>Dây Chuyền Aurora Italian 750</h3>
-                <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-gold-400)' }}>18.200.000₫</span>
-              </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', lineHeight: 1.6, marginBottom: '20px' }}>
-                Sợi dây vàng Ý 750 liên kết mắt xích mềm mại kết hợp mặt dây đính kim cương tấm tự nhiên tỏa sáng huyền ảo.
-              </p>
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>Chiều dài 42cm - 45cm</span>
-                <Link to="/products/day-chuyen-royal-crown" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-sakura-300)' }}>
-                  Xem tác phẩm <ChevronRight size={14} />
-                </Link>
-              </div>
-            </div>
-
-            {/* Card 3 */}
-            <div className="luxury-glass-card reveal delay-300" style={{ position: 'relative' }}>
-              <div style={{
-                position: 'relative',
-                height: '240px',
-                borderRadius: '8px',
-                background: 'radial-gradient(circle at center, #1e2230 0%, #0d0f15 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '22px',
-                overflow: 'hidden',
-                border: '1px solid rgba(255, 255, 255, 0.06)',
-              }}>
-                <Sparkles size={72} color="#ff9bb2" style={{ filter: 'drop-shadow(0 0 20px rgba(255,101,132,0.4))' }} />
-                <span style={{
-                  position: 'absolute',
-                  top: '14px',
-                  left: '14px',
-                  backgroundColor: 'rgba(255, 101, 132, 0.15)',
-                  border: '1px solid rgba(255, 101, 132, 0.35)',
-                  color: 'var(--color-sakura-300)',
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  padding: '4px 10px',
-                  borderRadius: '9999px',
-                }}>
-                  ROYAL TENNIS
-                </span>
-                <button
-                  title="Yêu thích"
-                  style={{
-                    position: 'absolute',
-                    top: '14px',
-                    right: '14px',
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--color-text-secondary)',
-                  }}
-                >
-                  <Heart size={16} />
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#FFFFFF' }}>Lắc Tay Tennis Diamond Pave</h3>
-                <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-gold-400)' }}>65.000.000₫</span>
-              </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', lineHeight: 1.6, marginBottom: '20px' }}>
-                Chuỗi 54 viên kim cương đồng nhất giác cắt Round Brilliant đính chấu 4 chấu chắc chắn trên vàng hồng 18K.
-              </p>
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>Bản giới hạn 18 chiếc</span>
-                <Link to="/products/vong-tay-tennis-diamond-5ct" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-sakura-300)' }}>
-                  Xem tác phẩm <ChevronRight size={14} />
-                </Link>
-              </div>
-            </div>
+              );
+            })}
           </div>
+          )}
         </div>
       </section>
 
@@ -773,7 +695,7 @@ export const HomePage: React.FC = () => {
                   )}
                 </div>
                 <div style={{ fontSize: '1rem', fontWeight: 600, color: '#FFFFFF', marginTop: '2px' }}>
-                  {health ? `${health.application} • Profile [${health.environment}]` : 'Spring Boot 3.3.4 Enterprise Service'}
+                  {health ? 'Cửa hàng đang hoạt động' : 'Đang kết nối cửa hàng'}
                 </div>
               </div>
             </div>

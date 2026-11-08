@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { authService } from '../../services/authService';
+import { useToast } from '../../context/ToastContext';
 import { X, Lock, Mail, User, Phone, Sparkles, ShieldCheck, ArrowRight } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
@@ -20,6 +22,12 @@ export const AuthModal: React.FC = () => {
   });
 
   const [submitting, setSubmitting] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [otpHint, setOtpHint] = useState('');
+  const { success, error } = useToast();
 
   if (!isAuthModalOpen) return null;
 
@@ -121,7 +129,7 @@ export const AuthModal: React.FC = () => {
             <Sparkles size={14} /> AURA PRIVILEGE PORTAL
           </div>
           <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#FFFFFF' }}>
-            {authModalMode === 'login' ? 'Đăng Nhập Khách Quý' : 'Đăng Ký Thành Viên VIP'}
+            {authModalMode === 'login' ? 'Đăng nhập' : 'Đăng ký tài khoản'}
           </h2>
         </div>
 
@@ -230,12 +238,57 @@ export const AuthModal: React.FC = () => {
             </div>
 
             <button
+              type="button"
+              onClick={() => setForgotOpen((open) => !open)}
+              style={{ background: 'transparent', border: 'none', color: 'var(--color-sakura-300)', cursor: 'pointer', fontSize: '0.82rem', marginBottom: '8px' }}
+            >
+              Quên mật khẩu
+            </button>
+            {forgotOpen && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                <input value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} placeholder="Email nhận mã OTP" style={{ padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#fff' }} />
+                <button
+                  type="button"
+                  className="btn-outline-pill"
+                  onClick={async () => {
+                    try {
+                      const res = await authService.requestPasswordOtp(forgotEmail);
+                      setOtpHint(res.devOtp ? `Mã dùng thử (chưa cấu hình Gmail): ${res.devOtp}` : res.message);
+                      success(res.message || 'Đã gửi mã OTP.', 'Quên mật khẩu');
+                    } catch {
+                      error('Không gửi được mã OTP.');
+                    }
+                  }}
+                >
+                  Gửi mã OTP qua Gmail
+                </button>
+                {otpHint && <div style={{ fontSize: '0.78rem', color: 'var(--color-gold-400)' }}>{otpHint}</div>}
+                <input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="Mã OTP" style={{ padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#fff' }} />
+                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mật khẩu mới" style={{ padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#fff' }} />
+                <button
+                  type="button"
+                  className="btn-pill-sakura"
+                  onClick={async () => {
+                    try {
+                      await authService.resetPassword(forgotEmail, otp, newPassword);
+                      success('Đã đặt lại mật khẩu. Hãy đăng nhập.', 'Thành công');
+                      setForgotOpen(false);
+                    } catch {
+                      error('Mã OTP không đúng hoặc đã hết hạn.');
+                    }
+                  }}
+                >
+                  Đặt lại mật khẩu
+                </button>
+              </div>
+            )}
+            <button
               type="submit"
               disabled={submitting}
               className="btn-pill-sakura"
               style={{ width: '100%', padding: '13px', fontSize: '0.92rem', cursor: submitting ? 'wait' : 'pointer' }}
             >
-              {submitting ? 'Đang xác thực...' : 'Đăng Nhập Ngay'} <ArrowRight size={16} />
+              {submitting ? 'Đang xác thực...' : 'Đăng nhập'} <ArrowRight size={16} />
             </button>
 
             {/* Quick Demo Credentials */}
@@ -263,7 +316,7 @@ export const AuthModal: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => fillQuickAccount('admin', 'Password123!')}
+                  onClick={() => fillQuickAccount('duongtrinhan00@gmail.com', 'Password123!')}
                   style={{
                     padding: '8px 10px',
                     borderRadius: '6px',
@@ -276,7 +329,7 @@ export const AuthModal: React.FC = () => {
                     transition: 'all 0.2s ease',
                   }}
                 >
-                  <ShieldCheck size={12} style={{ display: 'inline', marginRight: '4px' }} /> Quản Trị Admin
+                  <ShieldCheck size={12} style={{ display: 'inline', marginRight: '4px' }} /> Tài khoản quản trị
                 </button>
               </div>
             </div>

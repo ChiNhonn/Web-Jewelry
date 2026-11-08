@@ -3,6 +3,9 @@ package com.jewelry.store.service.impl;
 import com.jewelry.store.dto.common.PageResponse;
 import com.jewelry.store.dto.request.CancelOrderRequest;
 import com.jewelry.store.dto.request.CreateOrderRequest;
+import com.jewelry.store.dto.request.GuestCheckoutRequest;
+import com.jewelry.store.dto.request.GuestOrderActionRequest;
+import com.jewelry.store.dto.request.GuestOrderLineRequest;
 import com.jewelry.store.dto.request.UpdateOrderStatusRequest;
 import com.jewelry.store.dto.response.OrderResponse;
 import com.jewelry.store.dto.response.OrderSummaryResponse;
@@ -15,6 +18,7 @@ import com.jewelry.store.exception.BadRequestException;
 import com.jewelry.store.exception.ResourceNotFoundException;
 import com.jewelry.store.mapper.OrderMapper;
 import com.jewelry.store.repository.*;
+import com.jewelry.store.service.GuestUserProvider;
 import com.jewelry.store.service.OrderService;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +39,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -49,6 +54,9 @@ public class OrderServiceImpl implements OrderService {
     private final CouponRepository couponRepository;
     private final InventoryRepository inventoryRepository;
     private final OrderMapper orderMapper;
+    private final ProductVariantRepository variantRepository;
+    private final GuestUserProvider guestUserProvider;
+    private final CustomerNotificationRepository notificationRepository;
 
     private static final BigDecimal FREE_SHIPPING_THRESHOLD = new BigDecimal("10000000");
     private static final BigDecimal STANDARD_SHIPPING_FEE = new BigDecimal("50000");
@@ -101,7 +109,7 @@ public class OrderServiceImpl implements OrderService {
             inventoryRepository.save(inventory);
 
             // Tính giá phía máy chủ (Zero-Trust)
-            BigDecimal unitPrice = variant.getSalePrice();
+            BigDecimal unitPrice = com.jewelry.store.util.PricingUtils.effectiveSale(variant);
             BigDecimal itemSubtotal = unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
             subtotal = subtotal.add(itemSubtotal);
 
@@ -154,6 +162,12 @@ public class OrderServiceImpl implements OrderService {
                 }
             }
 
+            boolean dangKhuyenMai = orderItems.stream().anyMatch(item ->
+                    com.jewelry.store.util.PricingUtils.onPromotion(item.getVariant()));
+            if (dangKhuyenMai) {
+                throw new BadRequestException("Mã giảm giá không được cộng với sản phẩm đang khuyến mãi");
+            }
+
             appliedCoupon.setUsedCount(appliedCoupon.getUsedCount() + 1);
             couponRepository.save(appliedCoupon);
         }
@@ -183,6 +197,7 @@ public class OrderServiceImpl implements OrderService {
                 .paymentStatus(PaymentStatus.PENDING)
                 .shippingAddressSnapshot(shippingAddressSnapshot)
                 .customerNote(request.getCustomerNote())
+                .guestAccessToken(UUID.randomUUID().toString().replace("-", ""))
                 .build();
 
         for (OrderItem item : orderItems) {
@@ -363,6 +378,18 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setOrderStatus(newStatus);
+        if ((newStatus == OrderStatus.DELIVERED || newStatus == OrderStatus.COMPLETED)
+                && order.getUser() != null
+                && !GuestUserProvider.GUEST_USERNAME.equals(order.getUser().getUsername())) {
+            notificationRepository.save(CustomerNotification.builder()
+                    .user(order.getUser())
+                    .title("Đơn hàng đã được giao")
+                    .message("Đơn " + order.getOrderCode() + " đã giao tới bạn. Hãy đánh giá sản phẩm khi đã nhận hàng.")
+                    .orderCode(order.getOrderCode())
+                    .read(false)
+                    .createdAt(LocalDateTime.now())
+                    .build());
+        }
         if (request.getNote() != null && !request.getNote().isBlank()) {
             String note = order.getCustomerNote() != null
                     ? order.getCustomerNote() + " | [Cập nhật: " + request.getNote() + "]"
@@ -373,6 +400,151 @@ public class OrderServiceImpl implements OrderService {
         Order saved = orderRepository.save(order);
         log.info("Admin updated order {} status from {} to {}", orderCode, currentStatus, newStatus);
         return orderMapper.toOrderResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse createGuestOrder(GuestCheckoutRequest request) {
+        User guest = guestUserProvider.getOrCreate();
+        BigDecimal subtotal = BigDecimal.ZERO;
+        List<OrderItem> orderItems = new ArrayList<>();
+        boolean dangKhuyenMai = false;
+
+        for (GuestOrderLineRequest line : request.getItems()) {
+            ProductVariant variant = variantRepository.findById(line.getVariantId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phiên bản sản phẩm: " + line.getVariantId()));
+            Inventory inventory = variant.getInventory();
+            if (inventory == null || inventory.getAvailableQuantity() < line.getQuantity()) {
+                throw new BadRequestException("Sản phẩm không đủ hàng để đặt");
+            }
+            inventory.deductStock(line.getQuantity());
+            inventoryRepository.save(inventory);
+
+            BigDecimal unitPrice = com.jewelry.store.util.PricingUtils.effectiveSale(variant);
+            BigDecimal itemSubtotal = unitPrice.multiply(BigDecimal.valueOf(line.getQuantity()));
+            subtotal = subtotal.add(itemSubtotal);
+            if (com.jewelry.store.util.PricingUtils.onPromotion(variant)) {
+                dangKhuyenMai = true;
+            }
+
+            OrderItem orderItem = OrderItem.builder()
+                    .variant(variant)
+                    .productName(variant.getProduct() != null ? variant.getProduct().getName() : variant.getSku())
+                    .sku(variant.getSku())
+                    .variantAttributes((variant.getMaterialType() == null ? "" : variant.getMaterialType())
+                            + (variant.getSizeOption() == null ? "" : " • " + variant.getSizeOption()))
+                    .unitPrice(unitPrice)
+                    .quantity(line.getQuantity())
+                    .subtotal(itemSubtotal)
+                    .build();
+            orderItems.add(orderItem);
+        }
+
+        Coupon appliedCoupon = null;
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        if (request.getCouponCode() != null && !request.getCouponCode().isBlank()) {
+            if (dangKhuyenMai) {
+                throw new BadRequestException("Mã giảm giá không được cộng với sản phẩm đang khuyến mãi");
+            }
+            appliedCoupon = couponRepository.findByCodeIgnoreCase(request.getCouponCode().trim())
+                    .orElseThrow(() -> new BadRequestException("Mã giảm giá không tồn tại"));
+            if (!appliedCoupon.isValidForUse(subtotal)) {
+                throw new BadRequestException("Mã giảm giá không đủ điều kiện áp dụng");
+            }
+            if (appliedCoupon.getDiscountType() == DiscountType.PERCENTAGE) {
+                discountAmount = subtotal.multiply(appliedCoupon.getDiscountValue())
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                if (appliedCoupon.getMaxDiscount() != null && discountAmount.compareTo(appliedCoupon.getMaxDiscount()) > 0) {
+                    discountAmount = appliedCoupon.getMaxDiscount();
+                }
+            } else {
+                discountAmount = appliedCoupon.getDiscountValue().min(subtotal);
+            }
+            appliedCoupon.setUsedCount(appliedCoupon.getUsedCount() + 1);
+            couponRepository.save(appliedCoupon);
+        }
+
+        BigDecimal shippingFee = subtotal.compareTo(FREE_SHIPPING_THRESHOLD) < 0 ? STANDARD_SHIPPING_FEE : BigDecimal.ZERO;
+        BigDecimal totalAmount = subtotal.subtract(discountAmount).add(shippingFee);
+        String token = UUID.randomUUID().toString().replace("-", "");
+
+        Order order = Order.builder()
+                .orderCode(generateUniqueOrderCode())
+                .user(guest)
+                .coupon(appliedCoupon)
+                .subtotal(subtotal)
+                .discountAmount(discountAmount)
+                .shippingFee(shippingFee)
+                .totalAmount(totalAmount)
+                .orderStatus(OrderStatus.PENDING)
+                .paymentStatus(PaymentStatus.PENDING)
+                .shippingAddressSnapshot(request.getShippingAddress().toFullAddressString())
+                .customerNote(request.getCustomerNote())
+                .guestAccessToken(token)
+                .build();
+        orderItems.forEach(order::addOrderItem);
+        Payment payment = Payment.builder()
+                .order(order)
+                .paymentMethod(request.getPaymentMethod())
+                .amount(totalAmount)
+                .paymentStatus(PaymentStatus.PENDING)
+                .build();
+        order.setPayment(payment);
+        return orderMapper.toOrderResponse(orderRepository.save(order));
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse abandonGuestOrder(String orderCode, GuestOrderActionRequest request) {
+        Order order = loadGuestOrder(orderCode, request.getAccessToken());
+        if (order.getPaymentStatus() == PaymentStatus.COMPLETED) {
+            throw new BadRequestException("Đơn đã thanh toán, không thể hủy theo cách này");
+        }
+        if (order.getOrderItems() != null) {
+            for (OrderItem item : order.getOrderItems()) {
+                if (item.getVariant() != null && item.getVariant().getInventory() != null) {
+                    Inventory inventory = item.getVariant().getInventory();
+                    inventory.restoreStock(item.getQuantity());
+                    inventoryRepository.save(inventory);
+                }
+            }
+        }
+        if (order.getCoupon() != null) {
+            Coupon coupon = order.getCoupon();
+            coupon.setUsedCount(Math.max(0, coupon.getUsedCount() - 1));
+            couponRepository.save(coupon);
+        }
+        OrderResponse snapshot = orderMapper.toOrderResponse(order);
+        orderRepository.delete(order);
+        return snapshot;
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse switchGuestOrderToCod(String orderCode, GuestOrderActionRequest request) {
+        if (!Boolean.TRUE.equals(request.getConfirmed())) {
+            throw new BadRequestException("Cần bấm Xác nhận trước khi đổi sang thanh toán khi nhận hàng");
+        }
+        Order order = loadGuestOrder(orderCode, request.getAccessToken());
+        if (order.getPaymentStatus() == PaymentStatus.COMPLETED) {
+            throw new BadRequestException("Đơn đã thanh toán");
+        }
+        if (order.getPayment() == null) {
+            throw new BadRequestException("Đơn chưa có thông tin thanh toán");
+        }
+        order.getPayment().setPaymentMethod(PaymentMethodType.COD);
+        order.getPayment().setPaymentStatus(PaymentStatus.PENDING);
+        order.setPaymentStatus(PaymentStatus.PENDING);
+        return orderMapper.toOrderResponse(orderRepository.save(order));
+    }
+
+    private Order loadGuestOrder(String orderCode, String accessToken) {
+        Order order = orderRepository.findWithDetailsByOrderCode(orderCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
+        if (order.getGuestAccessToken() == null || !order.getGuestAccessToken().equals(accessToken)) {
+            throw new BadRequestException("Mã xác nhận đơn không đúng");
+        }
+        return order;
     }
 
     private String resolveShippingAddress(Long userId, CreateOrderRequest request) {

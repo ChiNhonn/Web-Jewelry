@@ -38,6 +38,10 @@ public class Category extends BaseAuditableEntity {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
+    /** Phần trăm giảm theo danh mục. Không cộng với mã giảm giá. */
+    @Column(name = "promotion_percent")
+    private Integer promotionPercent;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default

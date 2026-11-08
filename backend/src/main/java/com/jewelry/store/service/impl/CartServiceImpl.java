@@ -20,6 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -132,6 +134,19 @@ public class CartServiceImpl implements CartService {
             cart.clearItems();
             cartRepository.save(cart);
         }
+    }
+
+    @Override
+    @Transactional
+    public CartResponse mergeItems(Long userId, List<AddToCartRequest> items) {
+        if (items != null) {
+            for (AddToCartRequest item : items) {
+                if (item != null && item.getVariantId() != null && item.getQuantity() > 0) {
+                    addToCart(userId, item);
+                }
+            }
+        }
+        return getCart(userId);
     }
 
     private Cart getOrCreateCart(Long userId) {

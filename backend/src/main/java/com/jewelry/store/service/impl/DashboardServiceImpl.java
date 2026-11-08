@@ -35,9 +35,6 @@ public class DashboardServiceImpl implements DashboardService {
     private final OrderMapper orderMapper;
 
     private static final List<OrderStatus> REVENUE_STATUSES = List.of(
-            OrderStatus.CONFIRMED,
-            OrderStatus.PROCESSING,
-            OrderStatus.SHIPPING,
             OrderStatus.DELIVERED,
             OrderStatus.COMPLETED
     );

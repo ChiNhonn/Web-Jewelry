@@ -1,0 +1,10 @@
+com\jewelry\store\CartControllerTest.class
+com\jewelry\store\HealthControllerTest.class
+com\jewelry\store\PaymentGatewayTest.class
+com\jewelry\store\AuthControllerTest.class
+com\jewelry\store\ReviewAndUploadTest.class
+com\jewelry\store\OrderCheckoutTest.class
+com\jewelry\store\AdminCmsManagementTest.class
+com\jewelry\store\ProductCatalogTest.class
+com\jewelry\store\SystemE2EAndConcurrencyTest.class
+com\jewelry\store\AdminDashboardTest.class

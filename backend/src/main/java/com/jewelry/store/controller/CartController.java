@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/cart")
 @RequiredArgsConstructor
@@ -57,6 +59,15 @@ public class CartController {
             @PathVariable Long itemId) {
         CartResponse response = cartService.removeCartItem(currentUser.getId(), itemId);
         return ResponseEntity.ok(ApiResponse.success("Đã xóa sản phẩm khỏi giỏ hàng!", response));
+    }
+
+    @PostMapping("/merge")
+    @Operation(summary = "Gộp giỏ khách vào tài khoản")
+    public ResponseEntity<ApiResponse<CartResponse>> merge(
+            @AuthenticationPrincipal UserPrincipal currentUser,
+            @RequestBody List<AddToCartRequest> items) {
+        CartResponse response = cartService.mergeItems(currentUser.getId(), items);
+        return ResponseEntity.ok(ApiResponse.success("Đã gộp giỏ hàng", response));
     }
 
     @DeleteMapping

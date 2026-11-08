@@ -7,6 +7,7 @@ import com.jewelry.store.dto.response.ProductVariantResponse;
 import com.jewelry.store.entity.Product;
 import com.jewelry.store.entity.ProductImage;
 import com.jewelry.store.entity.ProductVariant;
+import com.jewelry.store.util.PricingUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -34,6 +35,7 @@ public interface ProductMapper {
     @Mapping(target = "isFeatured", expression = "java(product.isFeatured())")
     ProductDetailResponse toProductDetailResponse(Product product);
 
+    @Mapping(target = "salePrice", expression = "java(com.jewelry.store.util.PricingUtils.effectiveSale(variant))")
     @Mapping(target = "stockQuantity", expression = "java(variant.getInventory() != null ? variant.getInventory().getQuantity() : 0)")
     @Mapping(target = "availableQuantity", expression = "java(variant.getInventory() != null ? variant.getInventory().getAvailableQuantity() : 0)")
     ProductVariantResponse toProductVariantResponse(ProductVariant variant);
@@ -63,7 +65,7 @@ public interface ProductMapper {
             return BigDecimal.ZERO;
         }
         return variants.stream()
-                .map(ProductVariant::getSalePrice)
+                .map(PricingUtils::effectiveSale)
                 .min(Comparator.naturalOrder())
                 .orElse(BigDecimal.ZERO);
     }
@@ -74,7 +76,7 @@ public interface ProductMapper {
             return BigDecimal.ZERO;
         }
         return variants.stream()
-                .map(ProductVariant::getSalePrice)
+                .map(PricingUtils::effectiveSale)
                 .max(Comparator.naturalOrder())
                 .orElse(BigDecimal.ZERO);
     }

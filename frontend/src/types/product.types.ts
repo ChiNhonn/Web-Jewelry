@@ -4,6 +4,7 @@ export interface Category {
   slug: string;
   description?: string;
   imageUrl?: string;
+  promotionPercent?: number;
   status: 'ACTIVE' | 'INACTIVE';
   parentId?: number;
   children?: Category[];
@@ -57,6 +58,10 @@ export interface ProductDetail {
   description?: string;
   shortDescription?: string;
   materialOverview?: string;
+  weightGrams?: number;
+  stoneType?: string;
+  clarity?: string;
+  warranty?: string;
   brand: string;
   isFeatured: boolean;
   status: 'ACTIVE' | 'INACTIVE' | 'DRAFT' | 'OUT_OF_STOCK';
@@ -74,6 +79,7 @@ export interface ProductFilterParams {
   material?: string;
   brand?: string;
   isFeatured?: boolean;
+  inStockOnly?: boolean;
   page?: number;
   size?: number;
   sortBy?: string;

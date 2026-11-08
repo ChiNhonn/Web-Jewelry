@@ -83,6 +83,7 @@ public interface OrderMapper {
                 .couponCode(order.getCoupon() != null ? order.getCoupon().getCode() : null)
                 .shippingAddressSnapshot(order.getShippingAddressSnapshot())
                 .customerNote(order.getCustomerNote())
+                .guestAccessToken(order.getGuestAccessToken())
                 .items(itemResponses)
                 .totalQuantity(totalQuantity)
                 .createdAt(order.getCreatedAt())

@@ -4,6 +4,8 @@ import com.jewelry.store.dto.common.ApiResponse;
 import com.jewelry.store.dto.common.PageResponse;
 import com.jewelry.store.dto.request.CancelOrderRequest;
 import com.jewelry.store.dto.request.CreateOrderRequest;
+import com.jewelry.store.dto.request.GuestCheckoutRequest;
+import com.jewelry.store.dto.request.GuestOrderActionRequest;
 import com.jewelry.store.dto.response.OrderResponse;
 import com.jewelry.store.dto.response.OrderSummaryResponse;
 import com.jewelry.store.entity.enums.OrderStatus;
@@ -35,6 +37,31 @@ public class OrderController {
             @Valid @RequestBody CreateOrderRequest request) {
         OrderResponse response = orderService.createOrder(currentUser.getId(), request);
         return new ResponseEntity<>(ApiResponse.success("Đặt hàng thành công! Mã đơn: " + response.getOrderCode(), response), HttpStatus.CREATED);
+    }
+
+    @PostMapping("/guest")
+    @Operation(summary = "Đặt hàng khi chưa đăng nhập")
+    public ResponseEntity<ApiResponse<OrderResponse>> guestCheckout(@Valid @RequestBody GuestCheckoutRequest request) {
+        OrderResponse response = orderService.createGuestOrder(request);
+        return new ResponseEntity<>(ApiResponse.success("Đặt hàng thành công! Mã đơn: " + response.getOrderCode(), response), HttpStatus.CREATED);
+    }
+
+    @PostMapping("/{orderCode}/abandon")
+    @Operation(summary = "Hủy đơn vừa tạo và trả hàng về giỏ")
+    public ResponseEntity<ApiResponse<OrderResponse>> abandon(
+            @PathVariable String orderCode,
+            @Valid @RequestBody GuestOrderActionRequest request) {
+        OrderResponse response = orderService.abandonGuestOrder(orderCode, request);
+        return ResponseEntity.ok(ApiResponse.success("Đã hủy đơn và trả sản phẩm về giỏ", response));
+    }
+
+    @PutMapping("/{orderCode}/payment-method")
+    @Operation(summary = "Đổi đơn sang thanh toán khi nhận hàng")
+    public ResponseEntity<ApiResponse<OrderResponse>> switchToCod(
+            @PathVariable String orderCode,
+            @Valid @RequestBody GuestOrderActionRequest request) {
+        OrderResponse response = orderService.switchGuestOrderToCod(orderCode, request);
+        return ResponseEntity.ok(ApiResponse.success("Đã chuyển sang thanh toán khi nhận hàng", response));
     }
 
     @GetMapping

@@ -68,13 +68,17 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         // Authentication endpoints (/me requires authentication, others are public)
-                        .requestMatchers("/api/v1/auth/me").authenticated()
+                        .requestMatchers("/api/v1/auth/me", "/api/v1/auth/change-password").authenticated()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/health/**").permitAll()
 
                         // Public Catalog, Coupon, Media & Payment callback endpoints
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/coupons/**", "/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/payments/vnpay-return", "/api/v1/payments/vnpay-ipn").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/orders/guest").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/orders/*/abandon").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/orders/*/payment-method").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/payments/*/initiate").permitAll()
 
                         // Public Swagger & Actuator endpoints
                         .requestMatchers(

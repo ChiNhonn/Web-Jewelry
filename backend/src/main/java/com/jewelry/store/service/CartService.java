@@ -4,6 +4,8 @@ import com.jewelry.store.dto.request.AddToCartRequest;
 import com.jewelry.store.dto.request.UpdateCartItemRequest;
 import com.jewelry.store.dto.response.CartResponse;
 
+import java.util.List;
+
 public interface CartService {
 
     CartResponse getCart(Long userId);
@@ -15,4 +17,6 @@ public interface CartService {
     CartResponse removeCartItem(Long userId, Long cartItemId);
 
     void clearCart(Long userId);
+
+    CartResponse mergeItems(Long userId, List<AddToCartRequest> items);
 }
