@@ -18,7 +18,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import com.jewelry.store.security.JewelryPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -40,7 +40,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12); // Cost factor 12 for strong brute-force resistance
+        return new JewelryPasswordEncoder();
     }
 
     @Bean
@@ -73,7 +73,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/health/**").permitAll()
 
                         // Public Catalog, Coupon, Media & Payment callback endpoints
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/coupons/**", "/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/coupons/**", "/api/v1/reviews/latest", "/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/payments/vnpay-return", "/api/v1/payments/vnpay-ipn").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/orders/guest").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/orders/*/abandon").permitAll()

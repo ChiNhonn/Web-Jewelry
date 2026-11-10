@@ -19,6 +19,7 @@ public class OrderSummaryResponse {
     private String orderCode;
     private Long userId;
     private String customerName;
+    private String customerPhone;
 
     private OrderStatus orderStatus;
     private PaymentStatus paymentStatus;

@@ -25,6 +25,7 @@ public class ProductDetailResponse {
     private String shortDescription;
     private String materialOverview;
     private BigDecimal weightGrams;
+    private String weightLabel;
     private String stoneType;
     private String clarity;
     private String warranty;

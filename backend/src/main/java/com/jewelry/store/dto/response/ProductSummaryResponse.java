@@ -26,7 +26,10 @@ public class ProductSummaryResponse {
     private boolean isFeatured;
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
+    private BigDecimal originalPrice;
+    private Long defaultVariantId;
     private String thumbnailUrl;
+    private Integer stockQuantity;
     private ProductStatus status;
     private LocalDateTime createdAt;
 }

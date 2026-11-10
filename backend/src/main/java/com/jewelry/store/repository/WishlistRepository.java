@@ -14,8 +14,6 @@ public interface WishlistRepository extends JpaRepository<Wishlist, Long> {
 
     @Query("SELECT w FROM Wishlist w " +
            "JOIN FETCH w.product p " +
-           "LEFT JOIN FETCH p.images " +
-           "LEFT JOIN FETCH p.variants v " +
            "WHERE w.user.id = :userId " +
            "ORDER BY w.createdAt DESC")
     List<Wishlist> findAllByUserIdWithProductDetails(@Param("userId") Long userId);

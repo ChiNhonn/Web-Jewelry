@@ -34,14 +34,11 @@ public class UserPrincipal implements UserDetails {
 
     public static UserPrincipal create(User user) {
         Set<GrantedAuthority> authorities = new HashSet<>();
-
-        // Add Roles (e.g., ROLE_CUSTOMER, ROLE_ADMIN)
-        user.getRoles().forEach(role -> {
-            authorities.add(new SimpleGrantedAuthority(role.getName().name()));
-            // Add fine-grained Permissions (e.g., PRODUCT_CREATE)
-            role.getPermissions().forEach(permission ->
-                    authorities.add(new SimpleGrantedAuthority(permission.getName())));
-        });
+        String role = user.getRole() == null ? "CUSTOMER" : user.getRole().toUpperCase();
+        if (!role.startsWith("ROLE_")) {
+            role = "ROLE_" + role;
+        }
+        authorities.add(new SimpleGrantedAuthority(role));
 
         return UserPrincipal.builder()
                 .id(user.getId())

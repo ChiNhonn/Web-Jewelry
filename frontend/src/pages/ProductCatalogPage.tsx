@@ -147,10 +147,10 @@ export const ProductCatalogPage: React.FC = () => {
             >
               {currentCategory
                 ? categories.find((c) => c.slug === currentCategory)?.name || 'Bộ Sưu Tập Trang Sức'
-                : 'Đẳng Cấp Tuyệt Tác & Độc Bản'}
+                : 'Sản phẩm'}
             </h1>
             <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.98rem', lineHeight: 1.6 }}>
-              Tuyển tập những món trang sức cao cấp chế tác thủ công từ vàng Ý 18K và kim cương tự nhiên tiêu chuẩn GIA quốc tế.
+              Sản phẩm đang bán trong cửa hàng, lọc theo danh mục, giá và chất liệu.
             </p>
           </div>
         </div>
@@ -233,11 +233,9 @@ export const ProductCatalogPage: React.FC = () => {
                       { slug: 'nhan-kim-cuong', name: 'Nhẫn Kim Cương' },
                       { slug: 'day-chuyen-mat-day', name: 'Dây Chuyền & Mặt Dây' },
                       { slug: 'vong-tay-lac', name: 'Vòng Tay & Lắc' },
-                      { slug: 'bong-tai', name: 'Bông Tai' },
-                      { slug: 'bo-trang-suc', name: 'Bộ Trang Sức' },
-                      { slug: 'nhan-cuoi', name: 'Nhẫn Cưới' },
-                      { slug: 'kieng-vong-co', name: 'Kiềng và Vòng Cổ' },
-                      { slug: 'charm-phong-thuy', name: 'Charm Phong Thủy' },
+                      { slug: 'bong-tai', name: 'Bông Tai Quý Phái' },
+                      { slug: 'trang-suc-vang-18k', name: 'Trang Sức Vàng 18K' },
+                      { slug: 'trang-suc-bac', name: 'Trang Sức Bạc Ý 925' },
                     ]
                 ).map((cat) => (
                   <button
@@ -308,8 +306,8 @@ export const ProductCatalogPage: React.FC = () => {
                 {[
                   { id: 'all', label: 'Tất cả chất liệu' },
                   { id: 'Vàng Ý', label: 'Vàng Ý 750 / 18K' },
-                  { id: 'Kim Cương', label: 'Kim Cương GIA' },
-                  { id: 'Bạch Kim', label: 'Bạch Kim (Platinum 950)' },
+                  { id: 'Kim Cương', label: 'Kim cương' },
+                  { id: 'Bạch Kim', label: 'Bạch kim' },
                   { id: 'Ngọc Trai', label: 'Ngọc Trai Tự Nhiên' },
                 ].map((m) => (
                   <label
@@ -359,7 +357,7 @@ export const ProductCatalogPage: React.FC = () => {
             >
               <div style={{ fontSize: '0.86rem', color: 'var(--color-text-secondary)' }}>
                 Hiển thị <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{products.length}</span> trên{' '}
-                <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{totalElements}</span> tuyệt tác
+                <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{totalElements}</span> sản phẩm
                 {currentSearch && (
                   <span>
                     {' '}
@@ -474,7 +472,7 @@ export const ProductCatalogPage: React.FC = () => {
               >
                 <Gem size={64} color="#ff6584" style={{ marginBottom: '16px', opacity: 0.8 }} />
                 <h3 style={{ fontSize: '1.3rem', fontWeight: 600, color: '#FFFFFF', marginBottom: '8px' }}>
-                  Không tìm thấy tuyệt tác phù hợp
+                  Không tìm thấy sản phẩm phù hợp
                 </h3>
                 <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.88rem', maxWidth: '400px', margin: '0 auto 24px' }}>
                   Vui lòng thử điều chỉnh lại mức giá, chất liệu hoặc tìm kiếm từ khóa khác.

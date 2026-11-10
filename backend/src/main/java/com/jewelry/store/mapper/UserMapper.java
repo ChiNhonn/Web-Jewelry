@@ -1,30 +1,33 @@
 package com.jewelry.store.mapper;
 
 import com.jewelry.store.dto.response.UserSummaryResponse;
-import com.jewelry.store.entity.Role;
 import com.jewelry.store.entity.User;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
+import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
-@Mapper(componentModel = "spring")
-public interface UserMapper {
+@Component
+public class UserMapper {
 
-    @Mapping(target = "fullName", expression = "java(user.getFullName())")
-    @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRolesToStringList")
-    UserSummaryResponse toUserSummaryResponse(User user);
-
-    @Named("mapRolesToStringList")
-    default List<String> mapRolesToStringList(Set<Role> roles) {
-        if (roles == null) {
-            return Collections.emptyList();
+    public UserSummaryResponse toUserSummaryResponse(User user) {
+        String role = user.getRole() == null ? "CUSTOMER" : user.getRole().toUpperCase();
+        if (!role.startsWith("ROLE_") && !"GUEST".equals(role)) {
+            role = "ROLE_" + role;
         }
-        return roles.stream()
-                .map(role -> role.getName().name())
-                .toList();
+        if ("ADMIN".equalsIgnoreCase(user.getRole())) {
+            role = "ROLE_ADMIN";
+        } else if ("CUSTOMER".equalsIgnoreCase(user.getRole())) {
+            role = "ROLE_CUSTOMER";
+        }
+        return UserSummaryResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .firstName(user.getFullName())
+                .lastName("")
+                .phone(user.getPhone())
+                .roles(List.of(role))
+                .build();
     }
 }

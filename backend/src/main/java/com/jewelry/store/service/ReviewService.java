@@ -7,11 +7,15 @@ import com.jewelry.store.dto.response.ProductRatingSummaryResponse;
 import com.jewelry.store.dto.response.ReviewResponse;
 import com.jewelry.store.entity.enums.ReviewStatus;
 
+import java.util.List;
+
 public interface ReviewService {
 
     ReviewResponse createReview(Long userId, Long productId, CreateReviewRequest request);
 
     PageResponse<ReviewResponse> getProductReviews(Long productId, int page, int size);
+
+    List<ReviewResponse> getLatestVisibleReviews(int limit);
 
     ProductRatingSummaryResponse getProductRatingSummary(Long productId);
 

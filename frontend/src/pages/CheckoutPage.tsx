@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -8,16 +8,12 @@ import { paymentService } from '../services/paymentService';
 import { addressService } from '../services/addressService';
 import { Address } from '../types/address.types';
 import { PaymentMethodType } from '../types/order.types';
-import { BankTransferDetails } from '../types/payment.types';
 import { CartItem } from '../types/cart.types';
 import {
   CreditCard,
-  QrCode,
   Truck,
   CheckCircle2,
-  Lock,
   ArrowRight,
-  Copy,
   ChevronLeft,
 } from 'lucide-react';
 
@@ -25,7 +21,6 @@ export const CheckoutPage: React.FC = () => {
   const { items, subtotal, shippingFee, appliedCoupon, discountAmount, finalTotal, clearCart } = useCart();
   const { user, isAuthenticated, openAuthModal } = useAuth();
   const { success, error, info } = useToast();
-  const navigate = useNavigate();
 
   // Address State
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
@@ -45,8 +40,6 @@ export const CheckoutPage: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('COD');
   const [submitting, setSubmitting] = useState(false);
 
-  // VietQR Modal State
-  const [vietQrData] = useState<BankTransferDetails | null>(null);
   const [orderCreatedCode, setOrderCreatedCode] = useState<string | null>(null);
 
   // Load Saved Addresses if logged in
@@ -102,7 +95,7 @@ export const CheckoutPage: React.FC = () => {
       <div style={{ backgroundColor: '#050508', minHeight: '100vh', paddingTop: '140px', textAlign: 'center' }}>
         <h2 style={{ color: '#FFFFFF', marginBottom: '16px' }}>Túi trang sức của quý khách đang trống</h2>
         <Link to="/products" className="btn-pill-sakura">
-          Khám Phá Tuyệt Tác Trang Sức
+          Xem sản phẩm
         </Link>
       </div>
     );
@@ -192,11 +185,6 @@ export const CheckoutPage: React.FC = () => {
     }
   };
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    success(`Đã sao chép ${label}: ${text}`, 'Sao Chép Thành Công');
-  };
-
   return (
     <div style={{ backgroundColor: '#050508', minHeight: '100vh', paddingTop: '100px', paddingBottom: '90px' }}>
       <div className="container" style={{ maxWidth: '1100px' }}>
@@ -216,7 +204,7 @@ export const CheckoutPage: React.FC = () => {
         </Link>
 
         {/* ORDER SUCCESS DISPLAY (IF PLACED) */}
-        {orderCreatedCode && !vietQrData && (
+        {orderCreatedCode && (
           <div
             style={{
               backgroundColor: 'rgba(14, 16, 23, 0.9)',
@@ -244,7 +232,7 @@ export const CheckoutPage: React.FC = () => {
             </div>
 
             <h1 style={{ fontSize: '2.2rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '8px' }}>
-              Đặt Hàng Hoàng Gia Thành Công!
+              Đặt hàng thành công
             </h1>
             <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.98rem', maxWidth: '520px', margin: '0 auto 20px', lineHeight: 1.6 }}>
               Đơn hàng đã được ghi nhận. Bạn có thể theo dõi trạng thái trong mục đơn hàng.
@@ -261,7 +249,7 @@ export const CheckoutPage: React.FC = () => {
               }}
             >
               <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                MÃ ĐƠN HÀNG ĐẶC QUYỀN
+                Mã đơn hàng
               </div>
               <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--color-sakura-300)', letterSpacing: '0.05em', marginTop: '4px' }}>
                 {orderCreatedCode}
@@ -273,125 +261,15 @@ export const CheckoutPage: React.FC = () => {
                 Xem Tiến Độ Đơn Hàng
               </Link>
               <Link to="/products" className="btn-pill-sakura" style={{ padding: '12px 28px' }}>
-                Tiếp Tục Chiêm Ngưỡng Tuyệt Tác
+                Tiếp tục xem sản phẩm
               </Link>
             </div>
           </div>
         )}
 
-        {/* VIETQR PAYMENT DISPLAY MODAL (IF VIETQR SELECTED) */}
-        {vietQrData && (
-          <div
-            style={{
-              backgroundColor: 'rgba(14, 16, 23, 0.9)',
-              border: '1px solid rgba(212, 175, 55, 0.35)',
-              borderRadius: '20px',
-              padding: '40px 32px',
-              maxWidth: '680px',
-              margin: '0 auto',
-              textAlign: 'center',
-              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9), 0 0 50px rgba(212, 175, 55, 0.2)',
-            }}
-          >
-            <div style={{ fontSize: '0.8rem', letterSpacing: '0.15em', color: 'var(--color-gold-400)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '8px' }}>
-              THANH TOÁN TỰ ĐỘNG NAPAS 24/7
-            </div>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '8px' }}>
-              Quét Mã VietQR Hoàn Tất Đơn Hàng
-            </h2>
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.86rem', marginBottom: '24px' }}>
-              Đơn hàng <strong style={{ color: '#FFFFFF' }}>#{vietQrData.orderCode}</strong> đang chờ thanh toán số tiền{' '}
-              <strong style={{ color: 'var(--color-gold-400)' }}>{vietQrData.amount.toLocaleString('vi-VN')}₫</strong>
-            </p>
-
-            {/* QR Code Image */}
-            <div
-              style={{
-                width: '240px',
-                height: '240px',
-                backgroundColor: '#FFFFFF',
-                borderRadius: '16px',
-                padding: '12px',
-                margin: '0 auto 24px',
-                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.8)',
-              }}
-            >
-              <img
-                src={vietQrData.qrCodeUrl}
-                alt="VietQR AURA"
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              />
-            </div>
-
-            {/* Bank details copy box */}
-            <div
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '12px',
-                padding: '18px',
-                textAlign: 'left',
-                marginBottom: '28px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>Ngân hàng thụ hưởng:</span>
-                <span style={{ fontSize: '0.9rem', color: '#FFFFFF', fontWeight: 600 }}>MB Bank (Quân Đội)</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>Số tài khoản:</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '0.95rem', color: 'var(--color-gold-400)', fontWeight: 700 }}>
-                    {vietQrData.accountNo}
-                  </span>
-                  <button
-                    onClick={() => copyToClipboard(vietQrData.accountNo, 'Số tài khoản')}
-                    style={{ backgroundColor: 'transparent', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer' }}
-                  >
-                    <Copy size={14} />
-                  </button>
-                </div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>Chủ tài khoản:</span>
-                <span style={{ fontSize: '0.9rem', color: '#FFFFFF', fontWeight: 600 }}>{vietQrData.accountName}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>Nội dung chuyển khoản:</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '0.95rem', color: 'var(--color-sakura-300)', fontWeight: 700 }}>
-                    {vietQrData.transferContent}
-                  </span>
-                  <button
-                    onClick={() => copyToClipboard(vietQrData.transferContent, 'Nội dung chuyển khoản')}
-                    style={{ backgroundColor: 'transparent', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer' }}
-                  >
-                    <Copy size={14} />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-              <button
-                onClick={() => {
-                  success('Hệ thống đã ghi nhận yêu cầu chuyển khoản. Đang xác thực số dư.', 'Xác Nhận');
-                  navigate('/account?tab=orders');
-                }}
-                className="btn-pill-sakura"
-                style={{ padding: '12px 32px' }}
-              >
-                Tôi Đã Chuyển Khoản Xong
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* REGULAR CHECKOUT FORM */}
-        {!orderCreatedCode && !vietQrData && (
+        {!orderCreatedCode && (
           <form onSubmit={handlePlaceOrder}>
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.7fr) minmax(0, 1fr)', gap: '40px', alignItems: 'start' }}>
               {/* LEFT: Shipping & Payment Info */}
@@ -530,7 +408,7 @@ export const CheckoutPage: React.FC = () => {
                     <input
                       type="text"
                       required
-                      placeholder="Số 88 Đồng Khởi, Căn hộ Penthouse B12..."
+                      placeholder="Số nhà, tên đường"
                       value={shippingForm.streetAddress}
                       onChange={(e) => setShippingForm({ ...shippingForm, streetAddress: e.target.value })}
                       style={{
@@ -679,40 +557,7 @@ export const CheckoutPage: React.FC = () => {
                           Cổng Thanh Toán VNPAY (Thẻ ATM, Visa, QR Code)
                         </div>
                         <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-                          Thanh toán bảo mật trực tiếp qua cổng sandbox VNPAY chính thức.
-                        </div>
-                      </div>
-                    </label>
-
-                    {/* Method 2: VietQR */}
-                    <label
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '16px',
-                        padding: '16px 20px',
-                        borderRadius: '12px',
-                        border: paymentMethod === 'BANK_TRANSFER' ? '1px solid #ff6584' : '1px solid rgba(255, 255, 255, 0.08)',
-                        backgroundColor: paymentMethod === 'BANK_TRANSFER' ? 'rgba(255, 101, 132, 0.12)' : 'rgba(255, 255, 255, 0.02)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="BANK_TRANSFER"
-                        checked={paymentMethod === 'BANK_TRANSFER'}
-                        onChange={() => setPaymentMethod('BANK_TRANSFER')}
-                        style={{ accentColor: '#ff6584', cursor: 'pointer' }}
-                      />
-                      <QrCode size={24} color="#E6CA65" />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '0.92rem', fontWeight: 600, color: '#FFFFFF' }}>
-                          Chuyển Khoản Ngân Hàng Tự Động (VietQR NAPAS 24/7)
-                        </div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-                          Quét mã QR qua app ngân hàng MB Bank, tự động xác nhận số dư tức thì.
+                          Thanh toán qua VNPay.
                         </div>
                       </div>
                     </label>
@@ -742,10 +587,10 @@ export const CheckoutPage: React.FC = () => {
                       <Truck size={24} color="#10B981" />
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '0.92rem', fontWeight: 600, color: '#FFFFFF' }}>
-                          Thanh Toán Khi Nhận Hàng (COD Đồng Kiểm Tận Tay)
+                          Thanh toán khi nhận hàng (COD)
                         </div>
                         <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-                          Kiểm tra soi mã số kim cương GIA trước khi thanh toán cho nhân viên bảo an.
+                          Trả tiền khi nhận hàng.
                         </div>
                       </div>
                     </label>
@@ -767,7 +612,7 @@ export const CheckoutPage: React.FC = () => {
                   }}
                 >
                   <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '20px' }}>
-                    Tuyệt Tác Trong Đơn Hàng
+                    Sản phẩm trong đơn
                   </h3>
 
                   {/* Item snippets */}
@@ -802,7 +647,7 @@ export const CheckoutPage: React.FC = () => {
                       </div>
                     )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
-                      <span>Bảo hiểm & Vận chuyển:</span>
+                      <span>Phí vận chuyển:</span>
                       <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{shippingFee === 0 ? 'Miễn phí' : `${shippingFee.toLocaleString('vi-VN')}₫`}</span>
                     </div>
                   </div>
@@ -825,9 +670,6 @@ export const CheckoutPage: React.FC = () => {
                     {submitting ? 'Đang tạo đơn hàng...' : 'Xác nhận đặt hàng'} <ArrowRight size={18} />
                   </button>
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '16px' }}>
-                    <Lock size={13} /> Mã hóa giao dịch 256-bit SSL chuẩn PCI-DSS
-                  </div>
                 </div>
               </div>
             </div>

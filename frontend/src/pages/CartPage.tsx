@@ -9,8 +9,6 @@ import {
   Plus,
   ArrowRight,
   Tag,
-  ShieldCheck,
-  Truck,
   Sparkles,
   Gem,
   X,
@@ -73,7 +71,7 @@ export const CartPage: React.FC = () => {
           </p>
 
           <Link to="/products" className="btn-pill-sakura" style={{ padding: '12px 32px' }}>
-            Khám Phá Tuyệt Tác <ArrowRight size={16} />
+            Xem sản phẩm <ArrowRight size={16} />
           </Link>
         </div>
       </div>
@@ -356,7 +354,7 @@ export const CartPage: React.FC = () => {
                   <form onSubmit={handleApplyCoupon} style={{ display: 'flex', gap: '8px' }}>
                     <input
                       type="text"
-                      placeholder="Nhập AURA10 hoặc DIAMOND500K"
+                      placeholder="Nhập mã giảm giá"
                       value={couponInput}
                       onChange={(e) => setCouponInput(e.target.value)}
                       style={{
@@ -398,7 +396,7 @@ export const CartPage: React.FC = () => {
                 )}
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', color: 'var(--color-text-secondary)' }}>
-                  <span>Bảo hiểm & Vận chuyển đặc biệt:</span>
+                  <span>Phí vận chuyển:</span>
                   <span style={{ color: '#FFFFFF', fontWeight: 600 }}>{shippingFee === 0 ? 'Miễn phí' : `${shippingFee.toLocaleString('vi-VN')}₫`}</span>
                 </div>
               </div>
@@ -421,14 +419,6 @@ export const CartPage: React.FC = () => {
               </button>
 
               {/* Assurance Trust Points */}
-              <div style={{ marginTop: '24px', paddingTop: '18px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
-                  <ShieldCheck size={16} color="#ff6584" /> Cam kết 100% kim cương tự nhiên & vàng chuẩn tuổi
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
-                  <Truck size={16} color="#ff6584" /> Nhân viên AURA giao hàng tận tay có bảo an hộ tống
-                </div>
-              </div>
             </div>
           </div>
         </div>

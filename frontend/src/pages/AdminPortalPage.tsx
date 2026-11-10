@@ -11,9 +11,7 @@ import { AdminOperations } from './AdminOperations';
 import {
   ShieldCheck,
   TrendingUp,
-  Boxes,
   Users,
-  Tag,
   AlertTriangle,
   RefreshCw,
   Plus,
@@ -23,12 +21,18 @@ import {
   DollarSign,
   ShoppingBag,
   ArrowUpRight,
+  Gem,
+  Ticket,
+  Star,
+  Sparkles,
+  Truck,
+  FileText,
 } from 'lucide-react';
 
 export const AdminPortalPage: React.FC = () => {
-  const { success } = useToast();
+  const { success, error } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'inventory' | 'coupons' | 'users' | 'products' | 'categories' | 'orders' | 'reviews' | 'reports'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'inventory' | 'coupons' | 'users' | 'products' | 'categories' | 'orders' | 'reviews' | 'reports' | 'promotions'>('products');
 
   // Overview metrics state
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
@@ -76,7 +80,7 @@ export const AdminPortalPage: React.FC = () => {
                     if (alerts) setLowStockAlerts(alerts);
         })
         .finally(() => setLoadingOverview(false));
-    } else if (activeTab === 'inventory') {
+    } else if (activeTab === 'products' || activeTab === 'inventory') {
       setLoadingInventory(true);
       adminInventoryService
         .getInventories()
@@ -86,7 +90,7 @@ export const AdminPortalPage: React.FC = () => {
     } else if (activeTab === 'coupons') {
       setLoadingCoupons(true);
       adminCouponService
-        .getAllCoupons()
+        .getAllCoupons(undefined, 0, 50)
         .then((res) => setCoupons(res.content))
         .catch(() => setCoupons([]))
                 .finally(() => setLoadingCoupons(false));
@@ -110,35 +114,14 @@ export const AdminPortalPage: React.FC = () => {
         variantId: adjustModalItem.variantId,
         adjustmentType: adjustType,
         quantity: adjustQty,
-        reason: 'Nghệ nhân nhập hàng từ xưởng kim hoàn',
+        reason: 'Điều chỉnh tồn kho',
       });
       success(`Đã cập nhật tồn kho cho mã ${adjustModalItem.sku}.`, 'Kho Vận Thành Công');
       setAdjustModalItem(null);
       // Reload inventory
       adminInventoryService.getInventories().then((res) => setInventories(res.content));
     } catch {
-      // Local fallback
-      setInventories((prev) =>
-        prev.map((i) => {
-          if (i.variantId === adjustModalItem.variantId) {
-            const nextQty =
-              adjustType === 'ADD'
-                ? i.quantity + adjustQty
-                : adjustType === 'DEDUCT'
-                ? Math.max(0, i.quantity - adjustQty)
-                : adjustQty;
-            return {
-              ...i,
-              quantity: nextQty,
-              availableQuantity: nextQty - i.reservedQuantity,
-              stockStatus: nextQty <= i.lowStockThreshold ? 'LOW_STOCK' : 'IN_STOCK',
-            };
-          }
-          return i;
-        })
-      );
-      success(`Đã cập nhật tồn kho cho mã ${adjustModalItem.sku}.`, 'Kho Vận Thành Công');
-      setAdjustModalItem(null);
+      error('Không cập nhật được tồn kho.', 'Kho');
     }
   };
 
@@ -152,10 +135,7 @@ export const AdminPortalPage: React.FC = () => {
       );
       success(`Đã cập nhật trạng thái người dùng thành ${nextStatus}.`, 'Thành Công');
     } catch {
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userSummary.id ? { ...u, status: nextStatus } : u))
-      );
-      success(`Đã cập nhật trạng thái người dùng thành ${nextStatus}.`, 'Thành Công');
+      error('Không đổi được trạng thái tài khoản.', 'Khách hàng');
     }
   };
 
@@ -172,24 +152,7 @@ export const AdminPortalPage: React.FC = () => {
       success(`Đã tạo mã ưu đãi ${created.code} thành công!`, 'Khuyến Mãi');
       setShowCreateCouponModal(false);
     } catch {
-      const mock: AdminCoupon = {
-        id: Date.now(),
-        code: newCouponForm.code.toUpperCase(),
-        discountType: newCouponForm.discountType,
-        discountValue: newCouponForm.discountValue,
-        minOrderValue: newCouponForm.minOrderValue,
-        maxDiscount: newCouponForm.maxDiscount,
-        usageLimit: newCouponForm.usageLimit,
-        usedCount: 0,
-        startDate: newCouponForm.startDate,
-        endDate: newCouponForm.endDate,
-        isActive: true,
-        isExpired: false,
-        createdAt: new Date().toISOString(),
-      };
-      setCoupons((prev) => [mock, ...prev]);
-      success(`Đã tạo mã ưu đãi ${mock.code} thành công!`, 'Khuyến Mãi');
-      setShowCreateCouponModal(false);
+      error('Không tạo được mã giảm giá.', 'Mã giảm giá');
     }
   };
 
@@ -247,15 +210,15 @@ export const AdminPortalPage: React.FC = () => {
           }}
         >
           {[
-            { id: 'overview', label: 'Doanh thu', icon: TrendingUp },
-            { id: 'products', label: 'Sản phẩm', icon: ShoppingBag },
-            { id: 'categories', label: 'Danh mục', icon: Tag },
-            { id: 'orders', label: 'Đơn hàng', icon: Boxes },
-            { id: 'inventory', label: 'Tồn kho', icon: Boxes },
-            { id: 'coupons', label: 'Mã giảm giá', icon: Tag },
-            { id: 'users', label: 'Khách đã đăng ký', icon: Users },
-            { id: 'reviews', label: 'Đánh giá', icon: Tag },
-            { id: 'reports', label: 'Báo cáo', icon: TrendingUp },
+            { id: 'products', label: 'Quản lý sản phẩm', icon: ShoppingBag, color: '#ff8fa3' },
+            { id: 'categories', label: 'Quản lý danh mục trang sức', icon: Gem, color: '#e8c56b' },
+            { id: 'orders', label: 'Quản lý đơn hàng vận chuyển', icon: Truck, color: '#8ec5ff' },
+            { id: 'users', label: 'Quản lý khách hàng đăng ký', icon: Users, color: '#f5c16c' },
+            { id: 'overview', label: 'Thống kê doanh thu', icon: TrendingUp, color: '#7dffa1' },
+            { id: 'promotions', label: 'Quản lý khuyến mãi và sự kiện', icon: Sparkles, color: '#ffb703' },
+            { id: 'coupons', label: 'Quản lý mã giảm giá', icon: Ticket, color: '#c4b5fd' },
+            { id: 'reviews', label: 'Quản lý kiểm duyệt sản phẩm', icon: Star, color: '#ff8fa3' },
+            { id: 'reports', label: 'Xuất báo cáo PDF, Excel', icon: FileText, color: '#8ec5ff' },
           ].map((tab) => {
             const Icon = tab.icon;
             const isCur = activeTab === tab.id;
@@ -269,9 +232,9 @@ export const AdminPortalPage: React.FC = () => {
                   gap: '8px',
                   padding: '10px 20px',
                   borderRadius: '9999px',
-                  border: isCur ? '1px solid var(--color-gold-400)' : '1px solid rgba(255, 255, 255, 0.08)',
-                  backgroundColor: isCur ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255, 255, 255, 0.02)',
-                  color: isCur ? 'var(--color-gold-300)' : 'var(--color-text-secondary)',
+                  border: isCur ? `1px solid ${tab.color}` : '1px solid rgba(255, 255, 255, 0.08)',
+                  backgroundColor: isCur ? `${tab.color}22` : 'rgba(255, 255, 255, 0.02)',
+                  color: isCur ? tab.color : 'var(--color-text-secondary)',
                   fontSize: '0.86rem',
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -285,7 +248,7 @@ export const AdminPortalPage: React.FC = () => {
         </div>
 
         {/* TAB 1: EXECUTIVE OVERVIEW */}
-        {(activeTab === 'products' || activeTab === 'categories' || activeTab === 'orders' || activeTab === 'reviews' || activeTab === 'reports') && (
+        {(activeTab === 'products' || activeTab === 'categories' || activeTab === 'orders' || activeTab === 'reviews' || activeTab === 'reports' || activeTab === 'promotions') && (
           <AdminOperations tab={activeTab} />
         )}
 
@@ -320,9 +283,6 @@ export const AdminPortalPage: React.FC = () => {
                     <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#FFFFFF' }}>
                       {overview?.totalOrders || 0}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', color: '#10B981', marginTop: '6px' }}>
-                      <ArrowUpRight size={14} /> +12.0% tỷ lệ chuyển đổi
-                    </div>
                   </div>
 
                   <div style={{ backgroundColor: 'rgba(14, 16, 23, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '24px' }}>
@@ -334,7 +294,7 @@ export const AdminPortalPage: React.FC = () => {
                       {overview?.totalCustomers || 0}
                     </div>
                     <div style={{ fontSize: '0.76rem', color: 'var(--color-text-muted)', marginTop: '6px' }}>
-                      Hội viên Privilege Club
+                      Tài khoản khách hàng
                     </div>
                   </div>
 
@@ -344,7 +304,7 @@ export const AdminPortalPage: React.FC = () => {
                       <AlertTriangle size={20} color="#EF4444" />
                     </div>
                     <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#EF4444' }}>
-                      {overview?.lowStockCount || lowStockAlerts.length || 2}
+                      {overview?.lowStockCount ?? lowStockAlerts.length}
                     </div>
                     <div style={{ fontSize: '0.76rem', color: 'var(--color-text-muted)', marginTop: '6px' }}>
                       Mã SKU dưới ngưỡng an toàn
@@ -386,7 +346,7 @@ export const AdminPortalPage: React.FC = () => {
                             </span>
                             <button
                               onClick={() => {
-                                setActiveTab('inventory');
+                                setActiveTab('products');
                               }}
                               className="btn-pill-sakura"
                               style={{ padding: '6px 14px', fontSize: '0.76rem' }}
@@ -409,12 +369,12 @@ export const AdminPortalPage: React.FC = () => {
         )}
 
         {/* TAB 2: INVENTORY MANAGEMENT */}
-        {activeTab === 'inventory' && (
+        {activeTab === 'products' && (
           <div style={{ backgroundColor: 'rgba(14, 16, 23, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '28px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <div>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF' }}>
-                  Quản Lý Tồn Kho & Nhập Hàng Từ Xưởng
+                  Tồn kho trong quản lý sản phẩm
                 </h3>
                 <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.82rem', marginTop: '4px' }}>
                   Bảo vệ toàn vẹn dữ liệu đa luồng qua cơ chế Optimistic Locking (@Version)
@@ -430,7 +390,7 @@ export const AdminPortalPage: React.FC = () => {
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.86rem' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: 'var(--color-sakura-300)' }}>
-                    <th style={{ padding: '12px' }}>Tên Tuyệt Tác & Biến Thể</th>
+                    <th style={{ padding: '12px' }}>Tên sản phẩm</th>
                     <th style={{ padding: '12px' }}>Mã SKU</th>
                     <th style={{ padding: '12px' }}>Tồn Thực Tế</th>
                     <th style={{ padding: '12px' }}>Khả Dụng</th>
@@ -485,14 +445,14 @@ export const AdminPortalPage: React.FC = () => {
 
         {/* TAB 3: COUPONS CMS */}
         {activeTab === 'coupons' && (
-          <div style={{ backgroundColor: 'rgba(14, 16, 23, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '28px' }}>
+          <div style={{ backgroundColor: '#fbf6ee', border: '1px solid #eadfca', borderRadius: '22px', padding: '22px', color: '#3d2b16' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF' }}>
-                  Quản Trị Voucher & Khuyến Mãi
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#3d2b16' }}>
+                  Quản lý mã giảm giá
                 </h3>
-                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.82rem', marginTop: '4px' }}>
-                  Khởi tạo và kiểm soát giới hạn chi tiêu mã ưu đãi của khách hàng
+                <p style={{ color: '#8a7355', fontSize: '0.82rem', marginTop: '4px' }}>
+                  Bật, tắt hoặc xóa mã. Mã không cộng thêm khi sản phẩm đang có khuyến mãi.
                 </p>
               </div>
               <button
@@ -506,54 +466,54 @@ export const AdminPortalPage: React.FC = () => {
 
             {loadingCoupons ? (
               <div style={{ textAlign: 'center', padding: '60px 0' }}>
-                <RefreshCw size={28} color="#ff6584" style={{ animation: 'spin 1.5s linear infinite' }} />
+                <RefreshCw size={28} color="#c6a15a" style={{ animation: 'spin 1.5s linear infinite' }} />
               </div>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.86rem' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: 'var(--color-sakura-300)' }}>
-                    <th style={{ padding: '12px' }}>Mã Voucher</th>
-                    <th style={{ padding: '12px' }}>Loại Giảm</th>
-                    <th style={{ padding: '12px' }}>Mức Giảm</th>
-                    <th style={{ padding: '12px' }}>Đơn Tối Thiểu</th>
-                    <th style={{ padding: '12px' }}>Đã Dùng / Giới Hạn</th>
-                    <th style={{ padding: '12px' }}>Thời Hạn</th>
-                    <th style={{ padding: '12px' }}>Trạng Thái</th>
-                  </tr>
-                </thead>
-                <tbody style={{ color: 'var(--color-text-secondary)' }}>
-                  {coupons.map((c) => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                      <td style={{ padding: '14px 12px', color: 'var(--color-sakura-300)', fontWeight: 700 }}>{c.code}</td>
-                      <td style={{ padding: '14px 12px' }}>{c.discountType === 'PERCENTAGE' ? 'Phần Trăm (%)' : 'Số Tiền Mặt'}</td>
-                      <td style={{ padding: '14px 12px', color: '#FFFFFF', fontWeight: 600 }}>
-                        {c.discountType === 'PERCENTAGE' ? `${c.discountValue}%` : `${c.discountValue.toLocaleString('vi-VN')}₫`}
-                      </td>
-                      <td style={{ padding: '14px 12px' }}>{(c.minOrderValue || 0).toLocaleString('vi-VN')}₫</td>
-                      <td style={{ padding: '14px 12px' }}>
-                        {c.usedCount} / {c.usageLimit}
-                      </td>
-                      <td style={{ padding: '14px 12px', fontSize: '0.78rem' }}>
-                        {new Date(c.startDate).toLocaleDateString('vi-VN')} - {new Date(c.endDate).toLocaleDateString('vi-VN')}
-                      </td>
-                      <td style={{ padding: '14px 12px' }}>
-                        <span
-                          style={{
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            padding: '3px 8px',
-                            borderRadius: '4px',
-                            backgroundColor: c.isActive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                            color: c.isActive ? '#10B981' : '#EF4444',
-                          }}
-                        >
-                          {c.isActive ? 'HOẠT ĐỘNG' : 'TẠM KHÓA'}
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {coupons.map((c) => {
+                  const discount = c.discountType === 'PERCENTAGE'
+                    ? `Giảm ${c.discountValue}%${c.maxDiscount ? ` (tối đa ${c.maxDiscount.toLocaleString('vi-VN')} đ)` : ''}`
+                    : `Giảm ${c.discountValue.toLocaleString('vi-VN')} đ`;
+                  return (
+                    <div key={c.id} style={{ background: '#fff', color: '#3d2b16', border: '1px solid #eadfca', borderRadius: '16px', padding: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'center' }}>
+                        <strong style={{ letterSpacing: '0.04em' }}>{c.code}</strong>
+                        <span style={{ color: c.isActive ? '#1f8a4c' : '#d64545', background: c.isActive ? '#e5f8ec' : '#ffe4e4', borderRadius: '999px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 700 }}>
+                          {c.isActive ? 'Đang hoạt động' : 'Đang tắt'}
                         </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                      <div style={{ marginTop: '6px' }}>{c.title || 'Mã giảm giá'}</div>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px', fontSize: '0.82rem' }}>
+                        <span style={{ background: '#fff6e4', color: '#8a6840', borderRadius: '8px', padding: '4px 8px' }}>{discount}</span>
+                        <span style={{ background: '#fff6e4', color: '#8a6840', borderRadius: '8px', padding: '4px 8px' }}>Đơn tối thiểu: {(c.minOrderValue || 0).toLocaleString('vi-VN')} đ</span>
+                      </div>
+                      <div style={{ color: '#8a7355', fontSize: '0.8rem', marginTop: '8px' }}>Đã dùng: {c.usedCount}/{c.usageLimit} lượt (còn {Math.max(c.usageLimit - c.usedCount, 0)})</div>
+                      <div style={{ color: '#8a7355', fontSize: '0.8rem' }}>Hiệu lực: {new Date(c.startDate).toLocaleString('vi-VN')} đến {new Date(c.endDate).toLocaleString('vi-VN')}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                          Kích hoạt
+                          <input type="checkbox" checked={c.isActive} onChange={async () => {
+                            try {
+                              const updated = await adminCouponService.updateCoupon(c.id, { isActive: !c.isActive });
+                              setCoupons((prev) => prev.map((item) => item.id === c.id ? updated : item));
+                              success(updated.isActive ? 'Đã bật mã giảm giá.' : 'Đã tắt mã giảm giá.');
+                            } catch { error('Không đổi được mã giảm giá.'); }
+                          }} />
+                        </label>
+                        <button type="button" onClick={async () => {
+                          if (!window.confirm(`Xóa mã ${c.code}?`)) return;
+                          try {
+                            await adminCouponService.deleteCoupon(c.id);
+                            setCoupons((prev) => prev.filter((item) => item.id !== c.id));
+                            success('Đã xóa mã giảm giá.');
+                          } catch { error('Không xóa được mã giảm giá.'); }
+                        }} style={{ border: 'none', background: 'transparent', color: '#d64545', cursor: 'pointer' }}>Xóa</button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {coupons.length === 0 && <p style={{ color: '#8a7355' }}>Chưa có mã giảm giá.</p>}
+              </div>
             )}
           </div>
         )}
@@ -564,7 +524,7 @@ export const AdminPortalPage: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <div>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF' }}>
-                  Kiểm Duyệt Tài Khoản & Phân Quyền Nhân Sự
+                  Quản lý khách hàng đăng ký
                 </h3>
                 <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.82rem', marginTop: '4px' }}>
                   Khóa tài khoản gian lận thanh toán hoặc nâng cấp vai trò ROLE_STAFF cho nhân viên
@@ -792,7 +752,7 @@ export const AdminPortalPage: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '18px' }}>
-              Khởi Tạo Mã Ưu Đãi Hoàng Gia
+              Tạo mã giảm giá
             </h3>
 
             <form onSubmit={handleCreateCouponSubmit}>

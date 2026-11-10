@@ -15,7 +15,6 @@ export type PaymentMethodType =
   | 'COD'
   | 'VNPAY'
   | 'MOMO'
-  | 'BANK_TRANSFER'
   | 'CREDIT_CARD';
 
 export interface OrderItem {
@@ -62,6 +61,7 @@ export interface OrderSummary {
   orderCode: string;
   userId: number;
   customerName?: string;
+  customerPhone?: string;
   orderStatus: OrderStatus;
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethodType;

@@ -18,7 +18,6 @@ import {
   Plus,
   Sparkles,
   ChevronRight,
-  ShieldCheck,
   X,
   RefreshCw,
   Gem,
@@ -41,12 +40,12 @@ const PasswordForm: React.FC = () => {
           error('Mật khẩu hiện tại không đúng.');
         }
       }}
-      style={{ marginTop: '16px', display: 'grid', gap: '8px' }}
+      style={{ marginTop: '8px', display: 'grid', gap: '12px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.12)' }}
     >
-      <div style={{ color: '#fff', fontWeight: 600 }}>Đổi mật khẩu</div>
-      <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Mật khẩu hiện tại" required style={{ padding: '10px', borderRadius: '8px', background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.12)' }} />
-      <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mật khẩu mới" required minLength={6} style={{ padding: '10px', borderRadius: '8px', background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.12)' }} />
-      <button className="btn-outline-pill" style={{ padding: '10px' }}>Lưu mật khẩu mới</button>
+      <div style={{ color: '#fff', fontWeight: 700, fontSize: '1.05rem' }}>Đổi mật khẩu</div>
+      <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Mật khẩu hiện tại" required style={{ padding: '12px 14px', borderRadius: '10px', background: '#1a1d27', color: '#fff', border: '1px solid rgba(255,255,255,0.28)', fontSize: '0.95rem' }} />
+      <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Mật khẩu mới" required minLength={6} style={{ padding: '12px 14px', borderRadius: '10px', background: '#1a1d27', color: '#fff', border: '1px solid rgba(255,255,255,0.28)', fontSize: '0.95rem' }} />
+      <button className="btn-pill-sakura" style={{ padding: '12px' }}>Lưu mật khẩu mới</button>
     </form>
   );
 };
@@ -117,10 +116,10 @@ export const CustomerPortalPage: React.FC = () => {
         <div className="container" style={{ maxWidth: '520px' }}>
           <User size={56} color="#ff6584" style={{ marginBottom: '16px' }} />
           <h2 style={{ fontSize: '2rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '12px' }}>
-            AURA Privilege Club
+            Tài khoản
           </h2>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '28px' }}>
-            Vui lòng đăng nhập để truy cập sổ địa chỉ bảo hiểm, theo dõi tiến độ chế tác đơn hàng và các đặc quyền khách hàng hoàng gia.
+            Đăng nhập để xem đơn hàng, địa chỉ và sản phẩm yêu thích.
           </p>
           <button onClick={() => openAuthModal('login')} className="btn-pill-sakura" style={{ padding: '12px 32px' }}>
             Đăng nhập để xem tài khoản
@@ -136,37 +135,7 @@ export const CustomerPortalPage: React.FC = () => {
       const details = await orderService.getOrderDetails(orderCode);
       setSelectedOrderDetails(details);
     } catch {
-      // Mock view if offline
-      setSelectedOrderDetails({
-        id: 1,
-        orderCode,
-        userId: 1,
-        customerName: user?.fullName || 'Khách hàng',
-        orderStatus: 'CONFIRMED',
-        paymentStatus: 'COMPLETED',
-        paymentMethod: 'VNPAY',
-        subtotal: 48500000,
-        discountAmount: 0,
-        shippingFee: 0,
-        totalAmount: 48500000,
-        shippingAddressSnapshot: 'Số 88 Đồng Khởi, Bến Nghé, Quận 1, TP. Hồ Chí Minh',
-        totalQuantity: 1,
-        createdAt: new Date().toISOString(),
-        items: [
-          {
-            id: 101,
-            variantId: 1001,
-            productId: 1,
-            productName: 'Nhẫn Solitaire Diamond 2.0ct',
-            productSlug: 'nhan-solitaire-diamond-2ct',
-            sku: 'AURA-RING-001-WG-12',
-            variantAttributes: 'Ni 12 • Vàng trắng Ý 18K',
-            unitPrice: 48500000,
-            quantity: 1,
-            subtotal: 48500000,
-          },
-        ],
-      });
+      error('Không tải được chi tiết đơn hàng.', 'Đơn hàng');
     }
   };
 
@@ -180,7 +149,7 @@ export const CustomerPortalPage: React.FC = () => {
       orderService.getUserOrders(orderFilterStatus).then((res: any) => setOrders(res.content));
       setSelectedOrderDetails(null);
     } catch {
-      error('Không thể hủy đơn hàng lúc này hoặc đơn đã chuyển sang xưởng chế tác.', 'Lỗi');
+      error('Không hủy được đơn hàng lúc này.', 'Đơn hàng');
     }
   };
 
@@ -190,33 +159,19 @@ export const CustomerPortalPage: React.FC = () => {
     try {
       const created = await addressService.createAddress(newAddressForm);
       setAddresses((prev) => [...prev, created]);
-      success('Đã thêm địa chỉ giao hàng bảo mật mới.', 'Sổ Địa Chỉ');
+      success('Đã thêm địa chỉ giao hàng.', 'Địa chỉ');
       setShowAddAddressModal(false);
       setNewAddressForm({
         receiverName: user?.fullName || '',
         phone: user?.phone || '',
         streetAddress: '',
-        ward: 'Phường Bến Nghé',
-        district: 'Quận 1',
-        province: 'TP. Hồ Chí Minh',
+        ward: '',
+        district: '',
+        province: '',
         isDefault: false,
       });
     } catch {
-      // Mock local fallback
-      const mockAddr: Address = {
-        id: Date.now(),
-        receiverName: newAddressForm.receiverName,
-        phone: newAddressForm.phone,
-        streetAddress: newAddressForm.streetAddress,
-        ward: newAddressForm.ward,
-        district: newAddressForm.district,
-        province: newAddressForm.province,
-        isDefault: newAddressForm.isDefault || false,
-        fullAddress: `${newAddressForm.streetAddress}, ${newAddressForm.ward}, ${newAddressForm.district}, ${newAddressForm.province}`,
-      };
-      setAddresses((prev) => [...prev, mockAddr]);
-      success('Đã thêm địa chỉ giao hàng bảo mật mới.', 'Sổ Địa Chỉ');
-      setShowAddAddressModal(false);
+      error('Không thêm được địa chỉ.', 'Địa chỉ');
     }
   };
 
@@ -283,10 +238,10 @@ export const CustomerPortalPage: React.FC = () => {
               marginBottom: '8px',
             }}
           >
-            <Sparkles size={14} /> AURA PRIVILEGE PORTAL
+            <Sparkles size={14} /> Tài khoản
           </div>
           <h1 style={{ fontSize: '2.4rem', fontWeight: 700, color: '#FFFFFF' }}>
-            Hồ Sơ & Đặc Quyền Khách Quý
+            Hồ sơ
           </h1>
         </div>
 
@@ -413,7 +368,7 @@ export const CustomerPortalPage: React.FC = () => {
                   transition: 'all 0.2s ease',
                 }}
               >
-                <Heart size={16} /> Tuyệt Tác Yêu Thích
+                <Heart size={16} /> Yêu thích
               </button>
 
               <button
@@ -457,37 +412,21 @@ export const CustomerPortalPage: React.FC = () => {
                   Thông tin khách hàng
                 </h3>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
-                  <div style={{ padding: '16px', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '10px' }}>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Họ và Tên</div>
-                    <div style={{ fontSize: '0.95rem', color: '#FFFFFF', fontWeight: 600 }}>{user?.fullName || 'Chưa cập nhật'}</div>
-                  </div>
-
-                  <div style={{ padding: '16px', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '10px' }}>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Tên Tài Khoản</div>
-                    <div style={{ fontSize: '0.95rem', color: 'var(--color-sakura-300)', fontWeight: 600 }}>{user?.username}</div>
-                  </div>
-
-                  <div style={{ padding: '16px', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '10px' }}>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Địa Chỉ Email</div>
-                    <div style={{ fontSize: '0.95rem', color: '#FFFFFF', fontWeight: 600 }}>{user?.email}</div>
-                  </div>
-
-                  <div style={{ padding: '16px', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '10px' }}>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Số điện thoại</div>
-                    <div style={{ fontSize: '0.95rem', color: '#FFFFFF', fontWeight: 600 }}>{user?.phone || 'Chưa cập nhật'}</div>
-                  </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '28px' }}>
+                  {[
+                    ['Họ và Tên', user?.fullName || 'Chưa cập nhật', '#FFFFFF'],
+                    ['Tên tài khoản', user?.username || 'Chưa cập nhật', '#ffb3c4'],
+                    ['Email', user?.email || 'Chưa cập nhật', '#FFFFFF'],
+                    ['Số điện thoại', user?.phone || 'Chưa cập nhật', '#FFFFFF'],
+                  ].map(([label, value, color]) => (
+                    <div key={label} style={{ padding: '16px 18px', backgroundColor: '#1a1d27', border: '1px solid rgba(255,255,255,0.16)', borderRadius: '12px' }}>
+                      <div style={{ fontSize: '0.78rem', color: '#b7becc', marginBottom: '6px', letterSpacing: '0.04em' }}>{label}</div>
+                      <div style={{ fontSize: '1.05rem', color, fontWeight: 650 }}>{value}</div>
+                    </div>
+                  ))}
                 </div>
                 <PasswordForm />
 
-                <div style={{ padding: '20px', backgroundColor: 'rgba(212, 175, 55, 0.08)', border: '1px solid rgba(212, 175, 55, 0.25)', borderRadius: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-gold-400)', fontWeight: 600, fontSize: '0.92rem', marginBottom: '6px' }}>
-                    <ShieldCheck size={18} /> Đặc Quyền Khách Hàng Thượng Lưu AURA
-                  </div>
-                  <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.84rem', lineHeight: 1.5 }}>
-                    Quý khách được hưởng chế độ bảo hiểm tư nhân 100% khi bàn giao tại tư gia, dịch vụ khắc tên laser miễn phí và định kỳ làm mới trang sức 6 tháng/lần bởi nghệ nhân kim hoàn.
-                  </p>
-                </div>
               </div>
             )}
 
@@ -654,13 +593,20 @@ export const CustomerPortalPage: React.FC = () => {
                   </button>
                 </div>
 
+                {addresses.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '64px 24px', backgroundColor: '#12141c', border: '1px solid rgba(255,255,255,0.14)', borderRadius: '16px' }}>
+                    <MapPin size={42} color="#ff9bb2" style={{ marginBottom: '14px' }} />
+                    <p style={{ color: '#d5dbe6', fontSize: '1rem', marginBottom: '8px', fontWeight: 600 }}>Chưa có địa chỉ nhận hàng</p>
+                    <p style={{ color: '#9ea3b0', fontSize: '0.9rem' }}>Bấm Thêm địa chỉ mới để lưu nơi giao hàng.</p>
+                  </div>
+                ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
                   {addresses.map((addr) => (
                     <div
                       key={addr.id}
                       style={{
-                        backgroundColor: 'rgba(14, 16, 23, 0.7)',
-                        border: addr.isDefault ? '1px solid #ff6584' : '1px solid rgba(255, 255, 255, 0.08)',
+                        backgroundColor: '#1a1d27',
+                        border: addr.isDefault ? '1px solid #ff6584' : '1px solid rgba(255, 255, 255, 0.18)',
                         borderRadius: '14px',
                         padding: '20px',
                         position: 'relative',
@@ -684,14 +630,14 @@ export const CustomerPortalPage: React.FC = () => {
                         </span>
                       )}
 
-                      <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#FFFFFF', marginBottom: '6px' }}>
+                      <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '8px' }}>
                         {addr.receiverName}
                       </h4>
-                      <p style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)', marginBottom: '8px' }}>
+                      <p style={{ fontSize: '0.95rem', color: '#FFFFFF', marginBottom: '8px' }}>
                         {addr.phone}
                       </p>
-                      <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', lineHeight: 1.5, marginBottom: '16px' }}>
-                        {addr.streetAddress}, {addr.ward}, {addr.district}, {addr.province}
+                      <p style={{ fontSize: '0.95rem', color: '#e4e8f0', lineHeight: 1.55, marginBottom: '16px' }}>
+                        {[addr.streetAddress, addr.ward, addr.district, addr.province].filter(Boolean).join(', ')}
                       </p>
 
                       <div style={{ display: 'flex', gap: '12px', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
@@ -701,8 +647,9 @@ export const CustomerPortalPage: React.FC = () => {
                             style={{
                               backgroundColor: 'transparent',
                               border: 'none',
-                              color: 'var(--color-sakura-300)',
-                              fontSize: '0.76rem',
+                              color: '#ffb3c4',
+                              fontSize: '0.86rem',
+                              fontWeight: 600,
                               cursor: 'pointer',
                               textDecoration: 'underline',
                             }}
@@ -715,13 +662,14 @@ export const CustomerPortalPage: React.FC = () => {
                           style={{
                             backgroundColor: 'transparent',
                             border: 'none',
-                            color: 'var(--color-text-muted)',
-                            fontSize: '0.76rem',
+                            color: '#f0b4b4',
+                            fontSize: '0.86rem',
+                            fontWeight: 600,
                             cursor: 'pointer',
                             marginLeft: 'auto',
                           }}
-                          onMouseEnter={(e) => (e.currentTarget.style.color = '#EF4444')}
-                          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-muted)')}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = '#f0b4b4')}
                         >
                           Xóa
                         </button>
@@ -729,6 +677,7 @@ export const CustomerPortalPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
+                )}
               </div>
             )}
 
@@ -736,7 +685,7 @@ export const CustomerPortalPage: React.FC = () => {
             {currentTab === 'wishlist' && (
               <div>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '20px' }}>
-                  Tuyệt Tác Yêu Thích Của Quý Khách
+                  Sản phẩm yêu thích
                 </h3>
 
                 {wishlist.length > 0 ? (

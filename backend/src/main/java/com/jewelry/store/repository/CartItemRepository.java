@@ -2,14 +2,15 @@ package com.jewelry.store.repository;
 
 import com.jewelry.store.entity.CartItem;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
-@Repository
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
 
-    Optional<CartItem> findByCartIdAndVariantId(Long cartId, Long variantId);
+    List<CartItem> findByUserId(Long userId);
 
-    void deleteByCartId(Long cartId);
+    Optional<CartItem> findByUserIdAndProductId(Long userId, Long productId);
+
+    void deleteByUserId(Long userId);
 }

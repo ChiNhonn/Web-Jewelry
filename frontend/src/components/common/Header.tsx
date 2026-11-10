@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { notificationService, AppNotification } from '../../services/notificationService';
-import { ShoppingBag, Search, User, LogOut, ShieldCheck, Package, Heart, ChevronDown, Bell } from 'lucide-react';
+import { ShoppingBag, Search, User, LogOut, ShieldCheck, Package, Heart, ChevronDown, Bell, Scale } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { useCompare } from '../../context/CompareContext';
 
 export const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -14,6 +15,7 @@ export const Header: React.FC = () => {
   const [notesOpen, setNotesOpen] = useState(false);
   const { user, isAuthenticated, isAdmin, isStaff, openAuthModal, logout } = useAuth();
   const { totalQuantity } = useCart();
+  const { slugs: compareSlugs } = useCompare();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,15 +69,19 @@ export const Header: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            gap: '16px',
+            flexWrap: 'nowrap',
+            overflow: 'visible',
           }}
         >
           {/* Brand Logo */}
-          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             <span
               style={{
-                fontSize: '1.25rem',
+                fontSize: '1.15rem',
                 fontWeight: 800,
-                letterSpacing: '0.12em',
+                letterSpacing: '0.08em',
+                whiteSpace: 'nowrap',
                 color: '#FFFFFF',
                 textTransform: 'uppercase',
               }}
@@ -99,10 +105,13 @@ export const Header: React.FC = () => {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '28px',
-              fontSize: '0.85rem',
+              justifyContent: 'center',
+              gap: '12px',
+              flex: '1 0 auto',
+              fontSize: '0.8rem',
               fontWeight: 500,
               color: 'var(--color-text-secondary)',
+              whiteSpace: 'nowrap',
             }}
           >
             <Link
@@ -146,12 +155,12 @@ export const Header: React.FC = () => {
               Vòng Tay & Lắc
             </Link>
             <Link
-              to="/products?category=nhan-cuoi"
+              to="/products?category=trang-suc-vang-18k"
               style={{ transition: 'color 0.2s ease' }}
               onMouseEnter={(e) => (e.currentTarget.style.color = '#FFFFFF')}
               onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
             >
-              Nhẫn Cưới
+              Vàng 18K
             </Link>
             {(isAdmin || isStaff) && (
               <Link
@@ -170,7 +179,7 @@ export const Header: React.FC = () => {
           </nav>
 
           {/* Right Action Icons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0, whiteSpace: 'nowrap' }}>
             {/* Search Trigger */}
             <button
               onClick={() => setSearchOpen(!searchOpen)}
@@ -225,9 +234,52 @@ export const Header: React.FC = () => {
               </div>
             )}
 
+            <Link
+              to="/compare"
+              title="So sánh"
+              aria-label="So sánh"
+              style={{
+                color: 'var(--color-text-secondary)',
+                fontSize: '0.85rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                position: 'relative',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#FFFFFF')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-secondary)')}
+            >
+              <div style={{ position: 'relative', display: 'flex' }}>
+                <Scale size={20} />
+                {compareSlugs.length > 0 && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '-6px',
+                      right: '-8px',
+                      backgroundColor: '#e8c56b',
+                      color: '#1a1408',
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      width: '18px',
+                      height: '18px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {compareSlugs.length}
+                  </span>
+                )}
+              </div>
+            </Link>
+
             {/* Shopping Cart Link */}
             <Link
               to="/cart"
+              title="Giỏ hàng"
+              aria-label="Giỏ hàng"
               style={{
                 color: 'var(--color-text-secondary)',
                 fontSize: '0.85rem',
@@ -264,7 +316,6 @@ export const Header: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span style={{ fontSize: '0.82rem' }}>Giỏ hàng</span>
             </Link>
 
             {/* User Account / Auth Section */}
@@ -302,7 +353,7 @@ export const Header: React.FC = () => {
                   >
                     {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
                   </div>
-                  <span>{user.fullName || user.username}</span>
+                  <span style={{ whiteSpace: 'nowrap', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.fullName || user.username}</span>
                   <ChevronDown size={14} color="#9ea3b0" />
                 </button>
 
@@ -401,7 +452,7 @@ export const Header: React.FC = () => {
                         e.currentTarget.style.color = 'var(--color-text-secondary)';
                       }}
                     >
-                      <Heart size={15} /> Tuyệt Tác Yêu Thích
+                      <Heart size={15} /> Yêu thích
                     </Link>
 
                     {(isAdmin || isStaff) && (

@@ -6,174 +6,139 @@ import com.jewelry.store.dto.request.UpdateUserStatusRequest;
 import com.jewelry.store.dto.response.AddressResponse;
 import com.jewelry.store.dto.response.AdminUserDetailResponse;
 import com.jewelry.store.dto.response.AdminUserSummaryResponse;
-import com.jewelry.store.entity.Address;
-import com.jewelry.store.entity.Role;
+import com.jewelry.store.entity.Order;
 import com.jewelry.store.entity.User;
-import com.jewelry.store.entity.enums.OrderStatus;
 import com.jewelry.store.entity.enums.RoleType;
 import com.jewelry.store.entity.enums.UserStatus;
 import com.jewelry.store.exception.BadRequestException;
 import com.jewelry.store.exception.ResourceNotFoundException;
 import com.jewelry.store.repository.OrderRepository;
-import com.jewelry.store.repository.RoleRepository;
 import com.jewelry.store.repository.UserRepository;
 import com.jewelry.store.service.AdminUserService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Locale;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminUserServiceImpl implements AdminUserService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
     private final OrderRepository orderRepository;
-
-    private static final List<OrderStatus> SPENDING_STATUSES = List.of(
-            OrderStatus.CONFIRMED,
-            OrderStatus.PROCESSING,
-            OrderStatus.SHIPPING,
-            OrderStatus.DELIVERED,
-            OrderStatus.COMPLETED
-    );
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<AdminUserSummaryResponse> getAllUsers(
-            String keyword, UserStatus status, RoleType role, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        String cleanKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
-
-        Page<User> userPage = userRepository.findAllUsersWithFilter(cleanKeyword, status, role, pageable);
-        Page<AdminUserSummaryResponse> responsePage = userPage.map(this::mapToSummaryResponse);
-        return PageResponse.from(responsePage);
+    public PageResponse<AdminUserSummaryResponse> getAllUsers(String keyword, UserStatus status, RoleType role, int page, int size) {
+        String needle = keyword == null ? "" : keyword.trim().toLowerCase(Locale.ROOT);
+        List<AdminUserSummaryResponse> all = userRepository.findAll().stream()
+                .filter(user -> !user.isGuest())
+                .filter(user -> needle.isEmpty()
+                        || user.getUsername().toLowerCase(Locale.ROOT).contains(needle)
+                        || user.getEmail().toLowerCase(Locale.ROOT).contains(needle)
+                        || user.getFullName().toLowerCase(Locale.ROOT).contains(needle))
+                .filter(user -> status == null || user.getStatus() == status)
+                .filter(user -> role == null || roleName(user).equals(role.name()))
+                .map(this::toSummary)
+                .toList();
+        int safePage = Math.max(page, 0);
+        int safeSize = size <= 0 ? 20 : size;
+        int from = Math.min(safePage * safeSize, all.size());
+        int to = Math.min(from + safeSize, all.size());
+        return PageResponse.<AdminUserSummaryResponse>builder()
+                .content(all.subList(from, to))
+                .page(safePage)
+                .size(safeSize)
+                .totalElements(all.size())
+                .totalPages(Math.max((int) Math.ceil(all.size() / (double) safeSize), 1))
+                .first(safePage == 0)
+                .last(to >= all.size())
+                .build();
     }
 
     @Override
     @Transactional(readOnly = true)
     public AdminUserDetailResponse getUserDetail(Long id) {
-        User user = userRepository.findDetailByIdWithRolesAndAddresses(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
-        return mapToDetailResponse(user);
+        return toDetail(load(id));
     }
 
     @Override
     @Transactional
     public AdminUserDetailResponse updateUserStatus(Long id, UpdateUserStatusRequest request) {
-        User user = userRepository.findDetailByIdWithRolesAndAddresses(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
-
-        user.setStatus(request.getStatus());
-        User saved = userRepository.save(user);
-        log.info("Updated status for user id: {} to {}. Reason: '{}'", id, request.getStatus(), request.getReason());
-        return mapToDetailResponse(saved);
+        User user = load(id);
+        if (user.isGuest()) {
+            throw new BadRequestException("Không khóa tài khoản khách vãng lai");
+        }
+        user.setLocked(request.getStatus() == UserStatus.LOCKED || request.getStatus() == UserStatus.INACTIVE);
+        return toDetail(userRepository.save(user));
     }
 
     @Override
     @Transactional
     public AdminUserDetailResponse updateUserRole(Long id, UpdateUserRoleRequest request) {
-        User user = userRepository.findDetailByIdWithRolesAndAddresses(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
-
-        Set<Role> newRoles = new HashSet<>();
-        for (String roleStr : request.getRoles()) {
-            try {
-                RoleType roleType = RoleType.valueOf(roleStr.trim().toUpperCase());
-                Role role = roleRepository.findByName(roleType)
-                        .orElseThrow(() -> new BadRequestException("Role không tồn tại trong hệ thống: " + roleStr));
-                newRoles.add(role);
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestException("Tên vai trò không hợp lệ: " + roleStr);
-            }
+        User user = load(id);
+        String role = request.getRoles().stream().findFirst().orElse("ROLE_CUSTOMER");
+        if (role.endsWith("ADMIN")) {
+            user.setRole("ADMIN");
+        } else {
+            user.setRole("CUSTOMER");
         }
-
-        user.setRoles(newRoles);
-        User saved = userRepository.save(user);
-        log.info("Updated roles for user id: {} to {}", id, request.getRoles());
-        return mapToDetailResponse(saved);
+        return toDetail(userRepository.save(user));
     }
 
-    private AdminUserSummaryResponse mapToSummaryResponse(User user) {
-        List<String> roleNames = user.getRoles().stream()
-                .map(r -> r.getName().name())
-                .collect(Collectors.toList());
+    private User load(Long id) {
+        return userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy khách hàng"));
+    }
 
-        long totalOrders = orderRepository.countByUserId(user.getId());
-        BigDecimal totalSpent = orderRepository.sumTotalSpentByUserId(user.getId(), SPENDING_STATUSES);
+    private String roleName(User user) {
+        return "ADMIN".equalsIgnoreCase(user.getRole()) ? "ROLE_ADMIN" : "ROLE_CUSTOMER";
+    }
 
+    private AdminUserSummaryResponse toSummary(User user) {
+        List<Order> orders = orderRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        BigDecimal spent = orders.stream()
+                .filter(order -> "Đã giao hàng".equals(order.getOrderStatusText()))
+                .map(Order::getFinalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
         return AdminUserSummaryResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
                 .fullName(user.getFullName())
+                .firstName(user.getFullName())
+                .lastName("")
                 .phone(user.getPhone())
                 .status(user.getStatus())
-                .roles(roleNames)
-                .totalOrders(totalOrders)
-                .totalSpent(totalSpent != null ? totalSpent : BigDecimal.ZERO)
-                .createdAt(user.getCreatedAt())
+                .roles(List.of(roleName(user)))
+                .totalOrders(orders.size())
+                .totalSpent(spent)
                 .build();
     }
 
-    private AdminUserDetailResponse mapToDetailResponse(User user) {
-        List<String> roleNames = user.getRoles().stream()
-                .map(r -> r.getName().name())
-                .collect(Collectors.toList());
-
-        List<AddressResponse> addressResponses = user.getAddresses().stream()
-                .map(this::mapToAddressResponse)
-                .collect(Collectors.toList());
-
-        long totalOrders = orderRepository.countByUserId(user.getId());
-        BigDecimal totalSpent = orderRepository.sumTotalSpentByUserId(user.getId(), SPENDING_STATUSES);
-
+    private AdminUserDetailResponse toDetail(User user) {
+        AdminUserSummaryResponse summary = toSummary(user);
         return AdminUserDetailResponse.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .fullName(user.getFullName())
-                .phone(user.getPhone())
-                .avatarUrl(user.getAvatarUrl())
-                .status(user.getStatus())
-                .roles(roleNames)
-                .addresses(addressResponses)
-                .totalOrders(totalOrders)
-                .totalSpent(totalSpent != null ? totalSpent : BigDecimal.ZERO)
-                .createdAt(user.getCreatedAt())
-                .updatedAt(user.getUpdatedAt())
-                .build();
-    }
-
-    private AddressResponse mapToAddressResponse(Address a) {
-        return AddressResponse.builder()
-                .id(a.getId())
-                .receiverName(a.getReceiverName())
-                .phone(a.getPhone())
-                .streetAddress(a.getStreetAddress())
-                .ward(a.getWard())
-                .district(a.getDistrict())
-                .province(a.getProvince())
-                .postalCode(a.getPostalCode())
-                .isDefault(a.isDefault())
-                .fullAddress(a.getFullAddress())
-                .createdAt(a.getCreatedAt())
+                .id(summary.getId())
+                .username(summary.getUsername())
+                .email(summary.getEmail())
+                .fullName(summary.getFullName())
+                .firstName(summary.getFirstName())
+                .phone(summary.getPhone())
+                .status(summary.getStatus())
+                .roles(summary.getRoles())
+                .totalOrders(summary.getTotalOrders())
+                .totalSpent(summary.getTotalSpent())
+                .addresses(user.getAddress() == null ? List.of() : List.of(AddressResponse.builder()
+                        .id(user.getId())
+                        .receiverName(user.getFullName())
+                        .phone(user.getPhone())
+                        .streetAddress(user.getAddress())
+                        .fullAddress(user.getAddress())
+                        .isDefault(true)
+                        .build()))
                 .build();
     }
 }

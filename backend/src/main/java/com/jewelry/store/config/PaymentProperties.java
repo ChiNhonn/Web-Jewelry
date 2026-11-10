@@ -12,7 +12,6 @@ import org.springframework.context.annotation.Configuration;
 public class PaymentProperties {
 
     private VNPayProperties vnpay = new VNPayProperties();
-    private VietQRProperties vietqr = new VietQRProperties();
 
     @Getter
     @Setter
@@ -22,13 +21,5 @@ public class PaymentProperties {
         private String payUrl;
         private String returnUrl;
         private String apiUrl;
-    }
-
-    @Getter
-    @Setter
-    public static class VietQRProperties {
-        private String bankId;
-        private String accountNo;
-        private String accountName;
     }
 }

@@ -16,6 +16,10 @@ export const productService = {
     return response.data.data;
   },
 
+  async deleteCategory(id: number): Promise<void> {
+    await apiClient.delete(`/api/v1/categories/${id}`);
+  },
+
   async getCategories(): Promise<Category[]> {
     const response = await apiClient.get<ApiResponse<Category[]>>('/api/v1/categories');
     return response.data.data;

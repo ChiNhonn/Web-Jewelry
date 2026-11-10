@@ -20,7 +20,11 @@ export const ComparePage: React.FC = () => {
     setLoading(true);
     Promise.all(slugs.map((slug) => productService.getProductBySlug(slug).catch(() => null)))
       .then((rows) => {
-        if (!cancelled) setProducts(rows.filter((row): row is ProductDetail => !!row));
+        if (cancelled) return;
+        setProducts(rows.filter((row): row is ProductDetail => !!row));
+        slugs.forEach((slug, index) => {
+          if (!rows[index]) remove(slug);
+        });
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -28,7 +32,7 @@ export const ComparePage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [slugs]);
+  }, [slugs, remove]);
 
   const cell = (value?: string | number | null) => (value === undefined || value === null || value === '' ? '—' : String(value));
 
@@ -38,7 +42,7 @@ export const ComparePage: React.FC = () => {
     { label: 'Khuyến mãi', value: (p) => (p.variants?.[0] && p.variants[0].salePrice < p.variants[0].originalPrice ? 'Đang giảm giá' : 'Không') },
     { label: 'Tồn kho', value: (p) => cell(p.variants?.reduce((sum, v) => sum + (v.availableQuantity || 0), 0)) },
     { label: 'Chất liệu', value: (p) => cell(p.materialOverview || p.variants?.[0]?.materialType) },
-    { label: 'Trọng lượng', value: (p) => (p.weightGrams ? `${p.weightGrams} g` : '—') },
+    { label: 'Trọng lượng', value: (p) => cell(p.weightLabel || (p.weightGrams ? `${p.weightGrams} g` : '')) },
     { label: 'Loại đá', value: (p) => cell(p.stoneType) },
     { label: 'Độ tinh khiết', value: (p) => cell(p.clarity) },
     { label: 'Kích thước', value: (p) => cell(p.variants?.map((v) => v.sizeOption).filter(Boolean).join(', ')) },

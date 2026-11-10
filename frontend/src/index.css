@@ -107,6 +107,12 @@ button {
   transition: var(--transition-smooth);
 }
 
+input::placeholder,
+textarea::placeholder {
+  color: #6d7380;
+  opacity: 1;
+}
+
 /* Container */
 .container {
   width: 100%;
@@ -241,6 +247,44 @@ button {
 .reveal-scale.is-revealed {
   opacity: 1;
   transform: scale(1) translateY(0);
+}
+
+.spotlight-marquee {
+  overflow: hidden;
+  margin: 0 -8px;
+  mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent);
+}
+
+.spotlight-track {
+  display: flex;
+  width: max-content;
+  animation: auraSlideRight 48s linear infinite;
+}
+
+.spotlight-group {
+  display: flex;
+  gap: 28px;
+  padding-right: 28px;
+}
+
+.spotlight-card {
+  width: min(380px, 84vw);
+  flex: 0 0 auto;
+}
+
+.spotlight-marquee:hover .spotlight-track {
+  animation-play-state: paused;
+}
+
+@keyframes auraSlideRight {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spotlight-track {
+    animation: none;
+  }
 }
 
 .delay-100 { transition-delay: 0.1s; }

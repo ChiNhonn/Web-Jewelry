@@ -1,18 +1,15 @@
 package com.jewelry.store.service.impl;
 
 import com.jewelry.store.config.PaymentProperties;
-import com.jewelry.store.dto.response.BankTransferDetails;
 import com.jewelry.store.dto.response.PaymentInitiateResponse;
 import com.jewelry.store.dto.response.VNPayReturnResponse;
 import com.jewelry.store.entity.Order;
-import com.jewelry.store.entity.Payment;
 import com.jewelry.store.entity.enums.OrderStatus;
 import com.jewelry.store.entity.enums.PaymentMethodType;
 import com.jewelry.store.entity.enums.PaymentStatus;
 import com.jewelry.store.exception.BadRequestException;
 import com.jewelry.store.exception.ResourceNotFoundException;
 import com.jewelry.store.repository.OrderRepository;
-import com.jewelry.store.repository.PaymentRepository;
 import com.jewelry.store.service.PaymentService;
 import com.jewelry.store.util.VNPayUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,7 +31,6 @@ import java.util.*;
 public class PaymentServiceImpl implements PaymentService {
 
     private final OrderRepository orderRepository;
-    private final PaymentRepository paymentRepository;
     private final PaymentProperties paymentProperties;
 
     @Override
@@ -49,7 +45,7 @@ public class PaymentServiceImpl implements PaymentService {
         } else {
             order = orderRepository.findByOrderCode(orderCode)
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
-            if (order.getGuestAccessToken() == null || !order.getGuestAccessToken().equals(accessToken)) {
+            if (accessToken != null && !accessToken.isBlank() && !accessToken.equals(order.getOrderCode())) {
                 throw new BadRequestException("Mã xác nhận đơn không đúng");
             }
         }
@@ -62,8 +58,7 @@ public class PaymentServiceImpl implements PaymentService {
             throw new BadRequestException("Đơn hàng này đã bị hủy, không thể thực hiện thanh toán");
         }
 
-        Payment payment = order.getPayment();
-        PaymentMethodType paymentMethod = payment != null ? payment.getPaymentMethod() : PaymentMethodType.COD;
+        PaymentMethodType paymentMethod = order.getPaymentMethod();
 
         switch (paymentMethod) {
             case VNPAY -> {
@@ -77,17 +72,7 @@ public class PaymentServiceImpl implements PaymentService {
                         .message("Đã tạo liên kết thanh toán VNPay Sandbox thành công. Vui lòng chuyển hướng sang cổng thanh toán")
                         .build();
             }
-            case BANK_TRANSFER -> {
-                BankTransferDetails bankDetails = buildVietQrDetails(order);
-                return PaymentInitiateResponse.builder()
-                        .orderCode(orderCode)
-                        .paymentMethod(PaymentMethodType.BANK_TRANSFER)
-                        .paymentStatus(order.getPaymentStatus())
-                        .amount(order.getTotalAmount())
-                        .bankTransfer(bankDetails)
-                        .message("Vui lòng quét mã VietQR hoặc chuyển khoản ngân hàng theo thông tin bên dưới")
-                        .build();
-            }
+            case BANK_TRANSFER -> throw new BadRequestException("Cửa hàng không nhận chuyển khoản VietQR.");
             case COD -> {
                 return PaymentInitiateResponse.builder()
                         .orderCode(orderCode)
@@ -139,25 +124,16 @@ public class PaymentServiceImpl implements PaymentService {
         Optional<Order> orderOpt = orderRepository.findByOrderCode(orderCode);
         if (orderOpt.isPresent()) {
             Order order = orderOpt.get();
-            Payment payment = order.getPayment();
 
             if (isSuccess) {
                 order.setPaymentStatus(PaymentStatus.COMPLETED);
                 if (order.getOrderStatus() == OrderStatus.PENDING) {
                     order.setOrderStatus(OrderStatus.CONFIRMED);
                 }
-                if (payment != null) {
-                    payment.setPaymentStatus(PaymentStatus.COMPLETED);
-                    payment.setTransactionCode(transactionNo);
-                    payment.setPaidAt(LocalDateTime.now());
-                }
                 orderRepository.save(order);
                 log.info("VNPay payment SUCCESS for order: {}, transaction: {}", orderCode, transactionNo);
             } else {
                 order.setPaymentStatus(PaymentStatus.FAILED);
-                if (payment != null) {
-                    payment.setPaymentStatus(PaymentStatus.FAILED);
-                }
                 orderRepository.save(order);
                 log.warn("VNPay payment FAILED for order: {}, responseCode: {}", orderCode, responseCode);
             }
@@ -230,17 +206,9 @@ public class PaymentServiceImpl implements PaymentService {
             if (order.getOrderStatus() == OrderStatus.PENDING) {
                 order.setOrderStatus(OrderStatus.CONFIRMED);
             }
-            if (order.getPayment() != null) {
-                order.getPayment().setPaymentStatus(PaymentStatus.COMPLETED);
-                order.getPayment().setTransactionCode(transactionNo);
-                order.getPayment().setPaidAt(LocalDateTime.now());
-            }
             orderRepository.save(order);
         } else {
             order.setPaymentStatus(PaymentStatus.FAILED);
-            if (order.getPayment() != null) {
-                order.getPayment().setPaymentStatus(PaymentStatus.FAILED);
-            }
             orderRepository.save(order);
         }
 
@@ -261,20 +229,13 @@ public class PaymentServiceImpl implements PaymentService {
                     .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng: " + orderCode));
         }
 
-        Payment payment = order.getPayment();
-        PaymentMethodType paymentMethod = payment != null ? payment.getPaymentMethod() : PaymentMethodType.COD;
-
-        BankTransferDetails bankDetails = null;
-        if (paymentMethod == PaymentMethodType.BANK_TRANSFER) {
-            bankDetails = buildVietQrDetails(order);
-        }
+        PaymentMethodType paymentMethod = order.getPaymentMethod();
 
         return PaymentInitiateResponse.builder()
                 .orderCode(order.getOrderCode())
                 .paymentMethod(paymentMethod)
                 .paymentStatus(order.getPaymentStatus())
                 .amount(order.getTotalAmount())
-                .bankTransfer(bankDetails)
                 .message("Trạng thái thanh toán hiện tại: " + order.getPaymentStatus().name())
                 .build();
     }
@@ -328,32 +289,5 @@ public class PaymentServiceImpl implements PaymentService {
         query.append("&vnp_SecureHash=").append(vnp_SecureHash);
 
         return paymentProperties.getVnpay().getPayUrl() + "?" + query.toString();
-    }
-
-    private BankTransferDetails buildVietQrDetails(Order order) {
-        String bankId = paymentProperties.getVietqr().getBankId();
-        String accountNo = paymentProperties.getVietqr().getAccountNo();
-        String accountName = paymentProperties.getVietqr().getAccountName();
-        String transferContent = "JLW " + order.getOrderCode();
-        long amount = order.getTotalAmount().longValue();
-
-        String qrCodeUrl = String.format(
-                "https://img.vietqr.io/image/%s-%s-compact2.png?amount=%d&addInfo=%s&accountName=%s",
-                bankId,
-                accountNo,
-                amount,
-                URLEncoder.encode(transferContent, StandardCharsets.UTF_8),
-                URLEncoder.encode(accountName, StandardCharsets.UTF_8)
-        );
-
-        return BankTransferDetails.builder()
-                .bankId(bankId)
-                .accountNo(accountNo)
-                .accountName(accountName)
-                .amount(order.getTotalAmount())
-                .orderCode(order.getOrderCode())
-                .transferContent(transferContent)
-                .qrCodeUrl(qrCodeUrl)
-                .build();
     }
 }

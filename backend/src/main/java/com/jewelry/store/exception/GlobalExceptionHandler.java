@@ -139,7 +139,9 @@ public class GlobalExceptionHandler {
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.UNAUTHORIZED.value())
                 .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
-                .message("Full authentication is required to access this resource: " + ex.getMessage())
+                .message(ex instanceof org.springframework.security.authentication.BadCredentialsException
+                        ? "Email hoặc mật khẩu không đúng."
+                        : "Bạn cần đăng nhập để tiếp tục.")
                 .path(request.getRequestURI())
                 .build();
 

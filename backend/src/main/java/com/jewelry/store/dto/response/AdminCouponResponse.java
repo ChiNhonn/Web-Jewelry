@@ -15,6 +15,7 @@ public class AdminCouponResponse {
 
     private Long id;
     private String code;
+    private String title;
     private DiscountType discountType;
     private BigDecimal discountValue;
     private BigDecimal minOrderValue;

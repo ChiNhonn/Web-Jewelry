@@ -1,520 +1,98 @@
 package com.jewelry.store.service.impl;
 
 import com.jewelry.store.dto.common.PageResponse;
-import com.jewelry.store.dto.request.CancelOrderRequest;
-import com.jewelry.store.dto.request.CreateOrderRequest;
-import com.jewelry.store.dto.request.GuestCheckoutRequest;
-import com.jewelry.store.dto.request.GuestOrderActionRequest;
-import com.jewelry.store.dto.request.GuestOrderLineRequest;
-import com.jewelry.store.dto.request.UpdateOrderStatusRequest;
+import com.jewelry.store.dto.request.*;
+import com.jewelry.store.dto.response.OrderItemResponse;
 import com.jewelry.store.dto.response.OrderResponse;
 import com.jewelry.store.dto.response.OrderSummaryResponse;
 import com.jewelry.store.entity.*;
-import com.jewelry.store.entity.enums.DiscountType;
 import com.jewelry.store.entity.enums.OrderStatus;
 import com.jewelry.store.entity.enums.PaymentMethodType;
 import com.jewelry.store.entity.enums.PaymentStatus;
 import com.jewelry.store.exception.BadRequestException;
 import com.jewelry.store.exception.ResourceNotFoundException;
-import com.jewelry.store.mapper.OrderMapper;
 import com.jewelry.store.repository.*;
-import com.jewelry.store.service.GuestUserProvider;
+import com.jewelry.store.service.CouponService;
 import com.jewelry.store.service.OrderService;
-import jakarta.persistence.criteria.Predicate;
+import com.jewelry.store.service.PriceBook;
+import com.jewelry.store.util.StoreText;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.security.SecureRandom;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
+import java.util.Locale;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
-    private final CartRepository cartRepository;
-    private final CartItemRepository cartItemRepository;
+    private final OrderDetailRepository orderDetailRepository;
+    private final ProductRepository productRepository;
     private final UserRepository userRepository;
-    private final AddressRepository addressRepository;
+    private final CartItemRepository cartItemRepository;
     private final CouponRepository couponRepository;
-    private final InventoryRepository inventoryRepository;
-    private final OrderMapper orderMapper;
-    private final ProductVariantRepository variantRepository;
-    private final GuestUserProvider guestUserProvider;
     private final CustomerNotificationRepository notificationRepository;
-
-    private static final BigDecimal FREE_SHIPPING_THRESHOLD = new BigDecimal("10000000");
-    private static final BigDecimal STANDARD_SHIPPING_FEE = new BigDecimal("50000");
-    private static final String ALPHANUMERIC = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
-    private static final SecureRandom RANDOM = new SecureRandom();
+    private final PriceBook priceBook;
+    private final CouponService couponService;
 
     @Override
     @Transactional
     public OrderResponse createOrder(Long userId, CreateOrderRequest request) {
-        log.info("Starting checkout process for user ID: {}", userId);
-
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Người dùng không tồn tại"));
-
-        Cart cart = cartRepository.findByUserIdWithDetails(userId)
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy giỏ hàng của bạn"));
-
-        if (cart.getItems() == null || cart.getItems().isEmpty()) {
-            throw new BadRequestException("Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm trước khi thanh toán");
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản"));
+        List<CartItem> cart = cartItemRepository.findByUserId(userId);
+        if (cart.isEmpty()) {
+            throw new BadRequestException("Giỏ hàng đang trống");
         }
-
-        // 1. Phân giải địa chỉ giao hàng
-        String shippingAddressSnapshot = resolveShippingAddress(userId, request);
-
-        // 2. Tính toán Zero-Trust giá sản phẩm & Trừ kho với Optimistic Locking
-        BigDecimal subtotal = BigDecimal.ZERO;
-        List<OrderItem> orderItems = new ArrayList<>();
-
-        for (CartItem cartItem : cart.getItems()) {
-            ProductVariant variant = cartItem.getVariant();
-            if (variant == null) {
-                throw new BadRequestException("Dữ liệu sản phẩm trong giỏ hàng không hợp lệ");
-            }
-
-            Inventory inventory = variant.getInventory();
-            if (inventory == null) {
-                throw new BadRequestException("Không tìm thấy thông tin kho hàng cho sản phẩm: " + variant.getSku());
-            }
-
-            // Kiểm tra tồn kho trước khi trừ
-            if (inventory.getAvailableQuantity() < cartItem.getQuantity()) {
-                String productName = variant.getProduct() != null ? variant.getProduct().getName() : variant.getSku();
-                throw new BadRequestException("Sản phẩm '" + productName + " (SKU: " + variant.getSku() +
-                        ")' không đủ số lượng tồn kho (Khả dụng: " + inventory.getAvailableQuantity() +
-                        ", Yêu cầu: " + cartItem.getQuantity() + ")");
-            }
-
-            // Trừ kho nguyên tử - Kích hoạt Optimistic Locking qua @Version
-            inventory.deductStock(cartItem.getQuantity());
-            inventoryRepository.save(inventory);
-
-            // Tính giá phía máy chủ (Zero-Trust)
-            BigDecimal unitPrice = com.jewelry.store.util.PricingUtils.effectiveSale(variant);
-            BigDecimal itemSubtotal = unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
-            subtotal = subtotal.add(itemSubtotal);
-
-            // Ghép chuỗi thuộc tính biến thể (VD: "Vàng Trắng 18K • Size 16")
-            StringBuilder attrBuilder = new StringBuilder();
-            if (variant.getMaterialType() != null && !variant.getMaterialType().isBlank()) {
-                attrBuilder.append(variant.getMaterialType());
-            }
-            if (variant.getSizeOption() != null && !variant.getSizeOption().isBlank()) {
-                if (attrBuilder.length() > 0) attrBuilder.append(" • Size ");
-                else attrBuilder.append("Size ");
-                attrBuilder.append(variant.getSizeOption());
-            }
-
-            OrderItem orderItem = OrderItem.builder()
-                    .variant(variant)
-                    .productName(variant.getProduct() != null ? variant.getProduct().getName() : variant.getSku())
-                    .sku(variant.getSku())
-                    .variantAttributes(attrBuilder.toString())
-                    .unitPrice(unitPrice)
-                    .quantity(cartItem.getQuantity())
-                    .subtotal(itemSubtotal)
-                    .build();
-
-            orderItems.add(orderItem);
+        List<Line> lines = cart.stream()
+                .map(item -> new Line(item.getProduct().getId(), item.getQuantity()))
+                .toList();
+        ShippingAddressDto address = request.getShippingAddress();
+        if (address == null) {
+            throw new BadRequestException("Vui lòng nhập địa chỉ giao hàng");
         }
-
-        // 3. Xử lý mã giảm giá (Coupon)
-        Coupon appliedCoupon = null;
-        BigDecimal discountAmount = BigDecimal.ZERO;
-
-        if (request.getCouponCode() != null && !request.getCouponCode().trim().isEmpty()) {
-            appliedCoupon = couponRepository.findByCodeIgnoreCase(request.getCouponCode().trim())
-                    .orElseThrow(() -> new BadRequestException("Mã giảm giá '" + request.getCouponCode() + "' không tồn tại"));
-
-            if (!appliedCoupon.isValidForUse(subtotal)) {
-                throw new BadRequestException("Mã giảm giá không hợp lệ hoặc đơn hàng chưa đủ điều kiện áp dụng");
-            }
-
-            if (appliedCoupon.getDiscountType() == DiscountType.PERCENTAGE) {
-                discountAmount = subtotal.multiply(appliedCoupon.getDiscountValue())
-                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-                if (appliedCoupon.getMaxDiscount() != null && discountAmount.compareTo(appliedCoupon.getMaxDiscount()) > 0) {
-                    discountAmount = appliedCoupon.getMaxDiscount();
-                }
-            } else if (appliedCoupon.getDiscountType() == DiscountType.FIXED_AMOUNT) {
-                discountAmount = appliedCoupon.getDiscountValue();
-                if (discountAmount.compareTo(subtotal) > 0) {
-                    discountAmount = subtotal;
-                }
-            }
-
-            boolean dangKhuyenMai = orderItems.stream().anyMatch(item ->
-                    com.jewelry.store.util.PricingUtils.onPromotion(item.getVariant()));
-            if (dangKhuyenMai) {
-                throw new BadRequestException("Mã giảm giá không được cộng với sản phẩm đang khuyến mãi");
-            }
-
-            appliedCoupon.setUsedCount(appliedCoupon.getUsedCount() + 1);
-            couponRepository.save(appliedCoupon);
-        }
-
-        // 4. Tính phí vận chuyển (Miễn phí từ 10 triệu đồng trở lên)
-        BigDecimal shippingFee = BigDecimal.ZERO;
-        if (subtotal.compareTo(FREE_SHIPPING_THRESHOLD) < 0) {
-            shippingFee = STANDARD_SHIPPING_FEE;
-        }
-
-        // 5. Tổng tiền thanh toán
-        BigDecimal totalAmount = subtotal.subtract(discountAmount).add(shippingFee);
-
-        // 6. Sinh mã đơn hàng duy nhất (VD: JLW-20261001-A9F8X)
-        String orderCode = generateUniqueOrderCode();
-
-        // 7. Tạo Order thực thể
-        Order order = Order.builder()
-                .orderCode(orderCode)
-                .user(user)
-                .coupon(appliedCoupon)
-                .subtotal(subtotal)
-                .discountAmount(discountAmount)
-                .shippingFee(shippingFee)
-                .totalAmount(totalAmount)
-                .orderStatus(OrderStatus.PENDING)
-                .paymentStatus(PaymentStatus.PENDING)
-                .shippingAddressSnapshot(shippingAddressSnapshot)
-                .customerNote(request.getCustomerNote())
-                .guestAccessToken(UUID.randomUUID().toString().replace("-", ""))
-                .build();
-
-        for (OrderItem item : orderItems) {
-            order.addOrderItem(item);
-        }
-
-        // 8. Tạo Payment thực thể
-        Payment payment = Payment.builder()
-                .order(order)
-                .paymentMethod(request.getPaymentMethod())
-                .amount(totalAmount)
-                .paymentStatus(PaymentStatus.PENDING)
-                .build();
-        order.setPayment(payment);
-
-        Order savedOrder = orderRepository.save(order);
-
-        // 9. Dọn sạch giỏ hàng của khách hàng sau khi đặt thành công
-        cartItemRepository.deleteAll(cart.getItems());
-        cart.getItems().clear();
-
-        log.info("Order successfully created! OrderCode: {}, TotalAmount: {}", orderCode, totalAmount);
-        return orderMapper.toOrderResponse(savedOrder);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public PageResponse<OrderSummaryResponse> getUserOrders(Long userId, OrderStatus status, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<Order> orderPage;
-
-        if (status != null) {
-            orderPage = orderRepository.findByUserIdAndOrderStatus(userId, status, pageable);
-        } else {
-            orderPage = orderRepository.findByUserId(userId, pageable);
-        }
-
-        Page<OrderSummaryResponse> summaryPage = orderPage.map(orderMapper::toOrderSummaryResponse);
-        return PageResponse.from(summaryPage);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public OrderResponse getOrderByCode(Long userId, String orderCode, boolean isAdmin) {
-        Order order;
-        if (isAdmin) {
-            order = orderRepository.findWithDetailsByOrderCode(orderCode)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng với mã: " + orderCode));
-        } else {
-            order = orderRepository.findWithDetailsByOrderCodeAndUserId(orderCode, userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng không tồn tại hoặc không thuộc quyền sở hữu của bạn"));
-        }
-        return orderMapper.toOrderResponse(order);
-    }
-
-    @Override
-    @Transactional
-    public OrderResponse cancelOrder(Long userId, String orderCode, CancelOrderRequest request, boolean isAdmin) {
-        Order order;
-        if (isAdmin) {
-            order = orderRepository.findWithDetailsByOrderCode(orderCode)
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng: " + orderCode));
-        } else {
-            order = orderRepository.findWithDetailsByOrderCodeAndUserId(orderCode, userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng không tồn tại hoặc không thuộc quyền sở hữu của bạn"));
-        }
-
-        if (order.getOrderStatus() == OrderStatus.CANCELLED) {
-            throw new BadRequestException("Đơn hàng này đã được hủy trước đó");
-        }
-
-        // Khách hàng chỉ được phép hủy đơn khi trạng thái còn là PENDING
-        if (!isAdmin && order.getOrderStatus() != OrderStatus.PENDING) {
-            throw new BadRequestException("Đơn hàng đã được xác nhận/xử lý nên không thể hủy trực tiếp. Vui lòng liên hệ hotline hỗ trợ");
-        }
-
-        if (order.getOrderStatus() == OrderStatus.SHIPPING ||
-            order.getOrderStatus() == OrderStatus.DELIVERED ||
-            order.getOrderStatus() == OrderStatus.COMPLETED) {
-            throw new BadRequestException("Không thể hủy đơn hàng đang giao hoặc đã hoàn tất");
-        }
-
-        // 1. Hoàn lại tồn kho cho tất cả sản phẩm trong đơn
-        if (order.getOrderItems() != null) {
-            for (OrderItem item : order.getOrderItems()) {
-                if (item.getVariant() != null && item.getVariant().getInventory() != null) {
-                    Inventory inventory = item.getVariant().getInventory();
-                    inventory.restoreStock(item.getQuantity());
-                    inventoryRepository.save(inventory);
-                }
-            }
-        }
-
-        // 2. Hoàn lại lượt sử dụng mã giảm giá nếu có
-        if (order.getCoupon() != null) {
-            Coupon coupon = order.getCoupon();
-            coupon.setUsedCount(Math.max(0, coupon.getUsedCount() - 1));
-            couponRepository.save(coupon);
-        }
-
-        // 3. Cập nhật trạng thái
-        order.setOrderStatus(OrderStatus.CANCELLED);
-        if (request != null && request.getCancellationReason() != null && !request.getCancellationReason().isBlank()) {
-            String note = order.getCustomerNote() != null ? order.getCustomerNote() + " | [Lý do hủy: " + request.getCancellationReason() + "]"
-                    : "[Lý do hủy: " + request.getCancellationReason() + "]";
-            order.setCustomerNote(note);
-        }
-
-        Order saved = orderRepository.save(order);
-        log.info("Order {} was cancelled successfully (Cancelled by {} ID: {})", orderCode, isAdmin ? "ADMIN" : "CUSTOMER", userId);
-        return orderMapper.toOrderResponse(saved);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public PageResponse<OrderSummaryResponse> getAllOrdersForAdmin(OrderStatus status, String keyword, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-
-        Specification<Order> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            if (status != null) {
-                predicates.add(cb.equal(root.get("orderStatus"), status));
-            }
-
-            if (keyword != null && !keyword.trim().isEmpty()) {
-                String searchPattern = "%" + keyword.trim().toLowerCase() + "%";
-                Predicate codePredicate = cb.like(cb.lower(root.get("orderCode")), searchPattern);
-                Predicate addressPredicate = cb.like(cb.lower(root.get("shippingAddressSnapshot")), searchPattern);
-                predicates.add(cb.or(codePredicate, addressPredicate));
-            }
-
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-
-        Page<Order> orderPage = orderRepository.findAll(spec, pageable);
-        Page<OrderSummaryResponse> summaryPage = orderPage.map(orderMapper::toOrderSummaryResponse);
-        return PageResponse.from(summaryPage);
-    }
-
-    @Override
-    @Transactional
-    public OrderResponse updateOrderStatusByAdmin(String orderCode, UpdateOrderStatusRequest request) {
-        Order order = orderRepository.findWithDetailsByOrderCode(orderCode)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng: " + orderCode));
-
-        OrderStatus currentStatus = order.getOrderStatus();
-        OrderStatus newStatus = request.getNewStatus();
-
-        if (currentStatus == newStatus) {
-            return orderMapper.toOrderResponse(order);
-        }
-
-        // Nếu chuyển sang CANCELLED, hoàn lại tồn kho
-        if (newStatus == OrderStatus.CANCELLED && currentStatus != OrderStatus.CANCELLED) {
-            if (order.getOrderItems() != null) {
-                for (OrderItem item : order.getOrderItems()) {
-                    if (item.getVariant() != null && item.getVariant().getInventory() != null) {
-                        Inventory inventory = item.getVariant().getInventory();
-                        inventory.restoreStock(item.getQuantity());
-                        inventoryRepository.save(inventory);
-                    }
-                }
-            }
-            if (order.getCoupon() != null) {
-                Coupon coupon = order.getCoupon();
-                coupon.setUsedCount(Math.max(0, coupon.getUsedCount() - 1));
-                couponRepository.save(coupon);
-            }
-        }
-
-        // Nếu chuyển sang DELIVERED hoặc COMPLETED với phương thức COD
-        if ((newStatus == OrderStatus.DELIVERED || newStatus == OrderStatus.COMPLETED) &&
-            order.getPayment() != null && order.getPayment().getPaymentMethod() == PaymentMethodType.COD) {
-            order.setPaymentStatus(PaymentStatus.COMPLETED);
-            order.getPayment().setPaymentStatus(PaymentStatus.COMPLETED);
-            order.getPayment().setPaidAt(LocalDateTime.now());
-        }
-
-        order.setOrderStatus(newStatus);
-        if ((newStatus == OrderStatus.DELIVERED || newStatus == OrderStatus.COMPLETED)
-                && order.getUser() != null
-                && !GuestUserProvider.GUEST_USERNAME.equals(order.getUser().getUsername())) {
-            notificationRepository.save(CustomerNotification.builder()
-                    .user(order.getUser())
-                    .title("Đơn hàng đã được giao")
-                    .message("Đơn " + order.getOrderCode() + " đã giao tới bạn. Hãy đánh giá sản phẩm khi đã nhận hàng.")
-                    .orderCode(order.getOrderCode())
-                    .read(false)
-                    .createdAt(LocalDateTime.now())
-                    .build());
-        }
-        if (request.getNote() != null && !request.getNote().isBlank()) {
-            String note = order.getCustomerNote() != null
-                    ? order.getCustomerNote() + " | [Cập nhật: " + request.getNote() + "]"
-                    : "[Cập nhật: " + request.getNote() + "]";
-            order.setCustomerNote(note);
-        }
-
-        Order saved = orderRepository.save(order);
-        log.info("Admin updated order {} status from {} to {}", orderCode, currentStatus, newStatus);
-        return orderMapper.toOrderResponse(saved);
+        Order order = place(user, address.getReceiverName(), address.getPhone(), joinAddress(address), request.getPaymentMethod(), request.getCouponCode(), lines);
+        cartItemRepository.deleteByUserId(userId);
+        return toResponse(order);
     }
 
     @Override
     @Transactional
     public OrderResponse createGuestOrder(GuestCheckoutRequest request) {
-        User guest = guestUserProvider.getOrCreate();
-        BigDecimal subtotal = BigDecimal.ZERO;
-        List<OrderItem> orderItems = new ArrayList<>();
-        boolean dangKhuyenMai = false;
-
-        for (GuestOrderLineRequest line : request.getItems()) {
-            ProductVariant variant = variantRepository.findById(line.getVariantId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phiên bản sản phẩm: " + line.getVariantId()));
-            Inventory inventory = variant.getInventory();
-            if (inventory == null || inventory.getAvailableQuantity() < line.getQuantity()) {
-                throw new BadRequestException("Sản phẩm không đủ hàng để đặt");
-            }
-            inventory.deductStock(line.getQuantity());
-            inventoryRepository.save(inventory);
-
-            BigDecimal unitPrice = com.jewelry.store.util.PricingUtils.effectiveSale(variant);
-            BigDecimal itemSubtotal = unitPrice.multiply(BigDecimal.valueOf(line.getQuantity()));
-            subtotal = subtotal.add(itemSubtotal);
-            if (com.jewelry.store.util.PricingUtils.onPromotion(variant)) {
-                dangKhuyenMai = true;
-            }
-
-            OrderItem orderItem = OrderItem.builder()
-                    .variant(variant)
-                    .productName(variant.getProduct() != null ? variant.getProduct().getName() : variant.getSku())
-                    .sku(variant.getSku())
-                    .variantAttributes((variant.getMaterialType() == null ? "" : variant.getMaterialType())
-                            + (variant.getSizeOption() == null ? "" : " • " + variant.getSizeOption()))
-                    .unitPrice(unitPrice)
-                    .quantity(line.getQuantity())
-                    .subtotal(itemSubtotal)
-                    .build();
-            orderItems.add(orderItem);
-        }
-
-        Coupon appliedCoupon = null;
-        BigDecimal discountAmount = BigDecimal.ZERO;
-        if (request.getCouponCode() != null && !request.getCouponCode().isBlank()) {
-            if (dangKhuyenMai) {
-                throw new BadRequestException("Mã giảm giá không được cộng với sản phẩm đang khuyến mãi");
-            }
-            appliedCoupon = couponRepository.findByCodeIgnoreCase(request.getCouponCode().trim())
-                    .orElseThrow(() -> new BadRequestException("Mã giảm giá không tồn tại"));
-            if (!appliedCoupon.isValidForUse(subtotal)) {
-                throw new BadRequestException("Mã giảm giá không đủ điều kiện áp dụng");
-            }
-            if (appliedCoupon.getDiscountType() == DiscountType.PERCENTAGE) {
-                discountAmount = subtotal.multiply(appliedCoupon.getDiscountValue())
-                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-                if (appliedCoupon.getMaxDiscount() != null && discountAmount.compareTo(appliedCoupon.getMaxDiscount()) > 0) {
-                    discountAmount = appliedCoupon.getMaxDiscount();
-                }
-            } else {
-                discountAmount = appliedCoupon.getDiscountValue().min(subtotal);
-            }
-            appliedCoupon.setUsedCount(appliedCoupon.getUsedCount() + 1);
-            couponRepository.save(appliedCoupon);
-        }
-
-        BigDecimal shippingFee = subtotal.compareTo(FREE_SHIPPING_THRESHOLD) < 0 ? STANDARD_SHIPPING_FEE : BigDecimal.ZERO;
-        BigDecimal totalAmount = subtotal.subtract(discountAmount).add(shippingFee);
-        String token = UUID.randomUUID().toString().replace("-", "");
-
-        Order order = Order.builder()
-                .orderCode(generateUniqueOrderCode())
-                .user(guest)
-                .coupon(appliedCoupon)
-                .subtotal(subtotal)
-                .discountAmount(discountAmount)
-                .shippingFee(shippingFee)
-                .totalAmount(totalAmount)
-                .orderStatus(OrderStatus.PENDING)
-                .paymentStatus(PaymentStatus.PENDING)
-                .shippingAddressSnapshot(request.getShippingAddress().toFullAddressString())
-                .customerNote(request.getCustomerNote())
-                .guestAccessToken(token)
-                .build();
-        orderItems.forEach(order::addOrderItem);
-        Payment payment = Payment.builder()
-                .order(order)
-                .paymentMethod(request.getPaymentMethod())
-                .amount(totalAmount)
-                .paymentStatus(PaymentStatus.PENDING)
-                .build();
-        order.setPayment(payment);
-        return orderMapper.toOrderResponse(orderRepository.save(order));
+        User guest = userRepository.findByUsername("__guest__")
+                .orElseThrow(() -> new BadRequestException("Chưa có tài khoản khách vãng lai"));
+        List<Line> lines = request.getItems().stream()
+                .map(item -> new Line(item.getVariantId(), item.getQuantity()))
+                .toList();
+        ShippingAddressDto address = request.getShippingAddress();
+        Order order = place(guest, address.getReceiverName(), address.getPhone(), joinAddress(address), request.getPaymentMethod(), request.getCouponCode(), lines);
+        return toResponse(order);
     }
 
     @Override
     @Transactional
     public OrderResponse abandonGuestOrder(String orderCode, GuestOrderActionRequest request) {
-        Order order = loadGuestOrder(orderCode, request.getAccessToken());
+        Order order = requireGuestOrder(orderCode, request.getAccessToken());
         if (order.getPaymentStatus() == PaymentStatus.COMPLETED) {
-            throw new BadRequestException("Đơn đã thanh toán, không thể hủy theo cách này");
+            throw new BadRequestException("Đơn đã thanh toán, không thể hủy lúc này");
         }
-        if (order.getOrderItems() != null) {
-            for (OrderItem item : order.getOrderItems()) {
-                if (item.getVariant() != null && item.getVariant().getInventory() != null) {
-                    Inventory inventory = item.getVariant().getInventory();
-                    inventory.restoreStock(item.getQuantity());
-                    inventoryRepository.save(inventory);
-                }
+        OrderResponse snapshot = toResponse(order);
+        for (OrderDetail detail : orderDetailRepository.findByOrderId(order.getId())) {
+            if (detail.getProductId() != null) {
+                productRepository.findById(detail.getProductId()).ifPresent(product -> {
+                    product.setQuantity(product.getQuantity() + detail.getQuantity());
+                    productRepository.save(product);
+                });
             }
         }
-        if (order.getCoupon() != null) {
-            Coupon coupon = order.getCoupon();
-            coupon.setUsedCount(Math.max(0, coupon.getUsedCount() - 1));
-            couponRepository.save(coupon);
-        }
-        OrderResponse snapshot = orderMapper.toOrderResponse(order);
+        rollbackCoupon(order);
+        orderDetailRepository.deleteAll(orderDetailRepository.findByOrderId(order.getId()));
         orderRepository.delete(order);
         return snapshot;
     }
@@ -523,64 +101,295 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public OrderResponse switchGuestOrderToCod(String orderCode, GuestOrderActionRequest request) {
         if (!Boolean.TRUE.equals(request.getConfirmed())) {
-            throw new BadRequestException("Cần bấm Xác nhận trước khi đổi sang thanh toán khi nhận hàng");
+            throw new BadRequestException("Cần xác nhận trước khi đổi sang thanh toán khi nhận hàng");
         }
-        Order order = loadGuestOrder(orderCode, request.getAccessToken());
-        if (order.getPaymentStatus() == PaymentStatus.COMPLETED) {
-            throw new BadRequestException("Đơn đã thanh toán");
-        }
-        if (order.getPayment() == null) {
-            throw new BadRequestException("Đơn chưa có thông tin thanh toán");
-        }
-        order.getPayment().setPaymentMethod(PaymentMethodType.COD);
-        order.getPayment().setPaymentStatus(PaymentStatus.PENDING);
+        Order order = requireGuestOrder(orderCode, request.getAccessToken());
+        order.setPaymentMethod(PaymentMethodType.COD);
         order.setPaymentStatus(PaymentStatus.PENDING);
-        return orderMapper.toOrderResponse(orderRepository.save(order));
+        return toResponse(orderRepository.save(order));
     }
 
-    private Order loadGuestOrder(String orderCode, String accessToken) {
-        Order order = orderRepository.findWithDetailsByOrderCode(orderCode)
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<OrderSummaryResponse> getUserOrders(Long userId, OrderStatus status, int page, int size) {
+        List<OrderSummaryResponse> all = orderRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .filter(order -> status == null || order.getOrderStatus() == status)
+                .map(this::toSummary)
+                .toList();
+        return pageOf(all, page, size);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderByCode(Long userId, String orderCode, boolean isAdmin) {
+        Order order = orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
-        if (order.getGuestAccessToken() == null || !order.getGuestAccessToken().equals(accessToken)) {
+        if (!isAdmin && (userId == null || !order.getUser().getId().equals(userId))) {
+            throw new ResourceNotFoundException("Không tìm thấy đơn hàng");
+        }
+        return toResponse(order);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse cancelOrder(Long userId, String orderCode, CancelOrderRequest request, boolean isAdmin) {
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
+        if (!isAdmin && !order.getUser().getId().equals(userId)) {
+            throw new BadRequestException("Không có quyền hủy đơn này");
+        }
+        if (!isAdmin && order.getOrderStatus() != OrderStatus.PENDING) {
+            throw new BadRequestException("Chỉ hủy được đơn đang chờ xác nhận");
+        }
+        if (order.getOrderStatus() == OrderStatus.CANCELLED) {
+            return toResponse(order);
+        }
+        restoreStock(order);
+        rollbackCoupon(order);
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        return toResponse(orderRepository.save(order));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<OrderSummaryResponse> getAllOrdersForAdmin(OrderStatus status, String keyword, int page, int size) {
+        String needle = keyword == null ? "" : keyword.trim().toLowerCase(Locale.ROOT);
+        List<OrderSummaryResponse> all = orderRepository.findAll().stream()
+                .sorted(Comparator.comparing(Order::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .filter(order -> status == null || order.getOrderStatus() == status)
+                .filter(order -> needle.isEmpty()
+                        || order.getReceiverName().toLowerCase(Locale.ROOT).contains(needle)
+                        || order.getOrderCode().contains(needle)
+                        || (order.getPhone() != null && order.getPhone().contains(needle)))
+                .map(this::toSummary)
+                .toList();
+        return pageOf(all, page, size);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse updateOrderStatusByAdmin(String orderCode, UpdateOrderStatusRequest request) {
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
+        OrderStatus previous = order.getOrderStatus();
+        if (previous == OrderStatus.CANCELLED) {
+            throw new BadRequestException("Đơn đã hủy không thể đổi trạng thái.");
+        }
+        order.setOrderStatus(request.getNewStatus());
+        if (request.getNewStatus() == OrderStatus.DELIVERED || request.getNewStatus() == OrderStatus.COMPLETED) {
+            order.setPaymentStatus(PaymentStatus.COMPLETED);
+        }
+        orderRepository.save(order);
+        if (previous != OrderStatus.DELIVERED && (request.getNewStatus() == OrderStatus.DELIVERED || request.getNewStatus() == OrderStatus.COMPLETED)
+                && !order.getUser().isGuest()) {
+            notificationRepository.save(CustomerNotification.builder()
+                    .user(order.getUser())
+                    .title("Đơn hàng #" + order.getId() + " đã được giao thành công!")
+                    .message("Đơn hàng đã giao. Bạn có thể đánh giá sản phẩm.")
+                    .orderId(order.getId())
+                    .read(false)
+                    .type("ORDER_DELIVERED")
+                    .actionType("REVIEW_ORDER")
+                    .createdAt(LocalDateTime.now())
+                    .build());
+        }
+        return toResponse(order);
+    }
+
+    private Order place(User user, String receiver, String phone, String address, PaymentMethodType method, String couponCode, List<Line> lines) {
+        if (lines.isEmpty()) {
+            throw new BadRequestException("Giỏ hàng đang trống");
+        }
+        List<OrderDetail> details = new ArrayList<>();
+        BigDecimal merchandise = BigDecimal.ZERO;
+        BigDecimal payable = BigDecimal.ZERO;
+        BigDecimal promotionDiscount = BigDecimal.ZERO;
+        boolean promoted = false;
+        for (Line line : lines) {
+            Product product = productRepository.findById(line.productId())
+                    .orElseThrow(() -> new BadRequestException("Không tìm thấy sản phẩm trong giỏ"));
+            if (product.getQuantity() < line.quantity()) {
+                throw new BadRequestException("\"" + product.getName() + "\" không đủ hàng");
+            }
+            PriceBook.Quote quote = priceBook.quote(product);
+            BigDecimal lineSale = quote.sale().multiply(BigDecimal.valueOf(line.quantity()));
+            BigDecimal lineOriginal = quote.original().multiply(BigDecimal.valueOf(line.quantity()));
+            merchandise = merchandise.add(lineOriginal);
+            payable = payable.add(lineSale);
+            promotionDiscount = promotionDiscount.add(lineOriginal.subtract(lineSale));
+            promoted = promoted || quote.onPromotion();
+            details.add(OrderDetail.builder()
+                    .productId(product.getId())
+                    .productName(product.getName())
+                    .quantity(line.quantity())
+                    .unitPrice(quote.sale())
+                    .originalUnitPrice(quote.original())
+                    .subtotal(lineSale)
+                    .promotionDiscount(lineOriginal.subtract(lineSale))
+                    .promotionName(quote.promotionName())
+                    .build());
+            product.setQuantity(product.getQuantity() - line.quantity());
+            productRepository.save(product);
+        }
+        BigDecimal couponDiscount = BigDecimal.ZERO;
+        String savedCode = "";
+        if (couponCode != null && !couponCode.isBlank()) {
+            if (promoted) {
+                throw new BadRequestException("Mã giảm giá không dùng cùng sản phẩm đang khuyến mãi");
+            }
+            var coupon = couponService.validateCoupon(couponCode, payable);
+            if (!coupon.isValid()) {
+                throw new BadRequestException(coupon.getMessage());
+            }
+            couponDiscount = coupon.getCalculatedDiscount();
+            savedCode = coupon.getCode();
+            couponRepository.findByCodeIgnoreCase(savedCode).ifPresent(entity -> {
+                entity.setUsedCount(entity.getUsedCount() + 1);
+                couponRepository.save(entity);
+            });
+        }
+        BigDecimal finalAmount = payable.subtract(couponDiscount).max(BigDecimal.ZERO);
+        Order order = Order.builder()
+                .user(user)
+                .receiverName(receiver)
+                .phone(phone)
+                .shippingAddress(address)
+                .merchandiseTotal(merchandise)
+                .discountAmount(promotionDiscount.add(couponDiscount))
+                .couponCode(savedCode)
+                .finalAmount(finalAmount)
+                .promotionDiscount(promotionDiscount)
+                .couponDiscount(couponDiscount)
+                .createdAt(LocalDateTime.now())
+                .build();
+        if (method == PaymentMethodType.BANK_TRANSFER) {
+            throw new BadRequestException("Cửa hàng không nhận chuyển khoản VietQR.");
+        }
+        order.setPaymentMethod(method == null ? PaymentMethodType.COD : method);
+        order.setPaymentStatus(PaymentStatus.PENDING);
+        order.setOrderStatus(OrderStatus.PENDING);
+        order = orderRepository.save(order);
+        for (OrderDetail detail : details) {
+            detail.setOrder(order);
+        }
+        orderDetailRepository.saveAll(details);
+        order.setDetails(details);
+        return order;
+    }
+
+    private Order requireGuestOrder(String orderCode, String accessToken) {
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng"));
+        if (!order.getUser().isGuest()) {
+            throw new BadRequestException("Đơn này không phải đơn khách");
+        }
+        if (accessToken != null && !accessToken.isBlank() && !accessToken.equals(order.getOrderCode())) {
             throw new BadRequestException("Mã xác nhận đơn không đúng");
         }
         return order;
     }
 
-    private String resolveShippingAddress(Long userId, CreateOrderRequest request) {
-        if (request.getShippingAddressId() != null) {
-            Address address = addressRepository.findByIdAndUserId(request.getShippingAddressId(), userId)
-                    .orElseThrow(() -> new BadRequestException("Địa chỉ giao hàng đã chọn không hợp lệ hoặc không thuộc về bạn"));
-            return address.getReceiverName() + " (" + address.getPhone() + ") - " + address.getFullAddress();
+    private void restoreStock(Order order) {
+        for (OrderDetail detail : orderDetailRepository.findByOrderId(order.getId())) {
+            if (detail.getProductId() == null) {
+                continue;
+            }
+            productRepository.findById(detail.getProductId()).ifPresent(product -> {
+                product.setQuantity(product.getQuantity() + detail.getQuantity());
+                productRepository.save(product);
+            });
         }
-
-        if (request.getShippingAddress() != null) {
-            return request.getShippingAddress().toFullAddressString();
-        }
-
-        // Kiểm tra xem user có địa chỉ mặc định hay không
-        return addressRepository.findByUserIdAndIsDefaultTrue(userId)
-                .map(addr -> addr.getReceiverName() + " (" + addr.getPhone() + ") - " + addr.getFullAddress())
-                .orElseThrow(() -> new BadRequestException("Vui lòng nhập địa chỉ giao hàng hoặc chọn từ sổ địa chỉ đã lưu"));
     }
 
-    private String generateUniqueOrderCode() {
-        String datePrefix = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String code;
-        int attempts = 0;
-        do {
-            StringBuilder sb = new StringBuilder("JLW-").append(datePrefix).append("-");
-            for (int i = 0; i < 5; i++) {
-                sb.append(ALPHANUMERIC.charAt(RANDOM.nextInt(ALPHANUMERIC.length())));
-            }
-            code = sb.toString();
-            attempts++;
-            if (attempts > 10) {
-                code = "JLW-" + datePrefix + "-" + System.currentTimeMillis() % 100000;
-                break;
-            }
-        } while (orderRepository.existsByOrderCode(code));
+    private void rollbackCoupon(Order order) {
+        if (order.getCouponCode() == null || order.getCouponCode().isBlank()) {
+            return;
+        }
+        couponRepository.findByCodeIgnoreCase(order.getCouponCode()).ifPresent(coupon -> {
+            coupon.setUsedCount(Math.max(0, coupon.getUsedCount() - 1));
+            couponRepository.save(coupon);
+        });
+    }
 
-        return code;
+    private OrderResponse toResponse(Order order) {
+        List<OrderDetail> details = orderDetailRepository.findByOrderId(order.getId());
+        List<OrderItemResponse> items = details.stream().map(detail -> OrderItemResponse.builder()
+                .id(detail.getId())
+                .variantId(detail.getProductId())
+                .productId(detail.getProductId())
+                .productName(detail.getProductName())
+                .productSlug(detail.getProductId() == null ? null : StoreText.productSlug(detail.getProductId()))
+                .sku(detail.getProductId() == null ? null : "SP-" + detail.getProductId())
+                .unitPrice(detail.getUnitPrice())
+                .quantity(detail.getQuantity())
+                .subtotal(detail.getSubtotal())
+                .thumbnailUrl(detail.getProductId() == null ? null : productRepository.findById(detail.getProductId()).map(product -> StoreText.imageUrl(product.getImageName())).orElse(null))
+                .build()).toList();
+        int quantity = details.stream().mapToInt(OrderDetail::getQuantity).sum();
+        return OrderResponse.builder()
+                .id(order.getId())
+                .orderCode(order.getOrderCode())
+                .userId(order.getUser().getId())
+                .customerName(order.getReceiverName())
+                .customerEmail(order.getUser().getEmail())
+                .customerPhone(order.getPhone())
+                .orderStatus(order.getOrderStatus())
+                .paymentStatus(order.getPaymentStatus())
+                .paymentMethod(order.getPaymentMethod())
+                .subtotal(order.getMerchandiseTotal())
+                .discountAmount(order.getDiscountAmount())
+                .shippingFee(BigDecimal.ZERO)
+                .totalAmount(order.getFinalAmount())
+                .couponCode(order.getCouponCode())
+                .shippingAddressSnapshot(order.getShippingAddress())
+                .guestAccessToken(order.getGuestAccessToken())
+                .items(items)
+                .totalQuantity(quantity)
+                .createdAt(order.getCreatedAt())
+                .build();
+    }
+
+    private OrderSummaryResponse toSummary(Order order) {
+        List<OrderDetail> details = orderDetailRepository.findByOrderId(order.getId());
+        OrderDetail first = details.isEmpty() ? null : details.get(0);
+        return OrderSummaryResponse.builder()
+                .id(order.getId())
+                .orderCode(order.getOrderCode())
+                .userId(order.getUser().getId())
+                .customerName(order.getReceiverName())
+                .customerPhone(order.getPhone())
+                .orderStatus(order.getOrderStatus())
+                .paymentStatus(order.getPaymentStatus())
+                .paymentMethod(order.getPaymentMethod())
+                .totalAmount(order.getFinalAmount())
+                .itemCount(details.stream().mapToInt(OrderDetail::getQuantity).sum())
+                .firstItemName(first == null ? null : first.getProductName())
+                .firstItemThumbnail(first == null || first.getProductId() == null ? null : productRepository.findById(first.getProductId()).map(product -> StoreText.imageUrl(product.getImageName())).orElse(null))
+                .createdAt(order.getCreatedAt())
+                .build();
+    }
+
+    private <T> PageResponse<T> pageOf(List<T> all, int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = size <= 0 ? 20 : size;
+        int from = Math.min(safePage * safeSize, all.size());
+        int to = Math.min(from + safeSize, all.size());
+        int pages = (int) Math.ceil(all.size() / (double) safeSize);
+        return PageResponse.<T>builder()
+                .content(all.subList(from, to))
+                .page(safePage)
+                .size(safeSize)
+                .totalElements(all.size())
+                .totalPages(Math.max(pages, 1))
+                .first(safePage == 0)
+                .last(safePage >= pages - 1)
+                .build();
+    }
+
+    private String joinAddress(ShippingAddressDto address) {
+        return address.getStreetAddress() + ", " + address.getWard() + ", " + address.getDistrict() + ", " + address.getProvince();
+    }
+
+    private record Line(Long productId, int quantity) {
     }
 }

@@ -21,32 +21,32 @@ export const Footer: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <Award size={32} color="var(--color-gold-400)" />
           <div>
-            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>100% Vàng & Đá Quý Thật</h4>
-            <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>Đầy đủ chứng nhận kiểm định GIA / PNJ</p>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>Sản phẩm trong kho</h4>
+            <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>Giá và tồn kho theo từng món đang bán</p>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <Truck size={32} color="var(--color-gold-400)" />
           <div>
-            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>Giao Hàng Hỏa Tốc & Bảo Hiểm</h4>
-            <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>Bảo hiểm 100% giá trị đơn hàng</p>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>Thanh toán</h4>
+            <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>COD hoặc VNPay</p>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <RefreshCw size={32} color="var(--color-gold-400)" />
           <div>
-            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>Đổi Mới Trong 48 Giờ</h4>
-            <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>Làm mới và chỉnh ni nhẫn trọn đời</p>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>Nhận xét</h4>
+            <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>Chỉ hiện lời khách đã mua và được duyệt</p>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <ShieldCheck size={32} color="var(--color-gold-400)" />
           <div>
-            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>Bảo Mật & Thanh Toán An Toàn</h4>
-            <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>Mã hóa SSL 256-bit chuẩn quốc tế</p>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>Tài khoản</h4>
+            <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>Đăng nhập để xem đơn và yêu thích</p>
           </div>
         </div>
       </div>
@@ -65,34 +65,34 @@ export const Footer: React.FC = () => {
             <span className="heading-serif gold-gradient-text" style={{ fontSize: '1.2rem', fontWeight: 700 }}>AURA JEWELRY</span>
           </div>
           <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>
-            Kiến tạo những tác phẩm trang sức đỉnh cao, tôn vinh vẻ đẹp vĩnh cửu và sự quý phái của bạn qua từng giác cắt tinh xảo.
+            Cửa hàng trang sức AURA: xem hàng, đặt hàng và thanh toán khi nhận hoặc qua VNPay.
           </p>
         </div>
 
         <div>
           <h4 className="heading-serif" style={{ fontSize: '0.9rem', color: 'var(--color-gold-400)', marginBottom: '16px' }}>Dòng Sản Phẩm</h4>
           <ul style={{ listStyle: 'none', fontSize: '0.85rem', color: 'var(--color-text-secondary)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <li><a href="#nhan-cuoi">Nhẫn Cưới & Cầu Hôn</a></li>
-            <li><a href="#kim-cuong">Kim Cương Tự Nhiên GIA</a></li>
-            <li><a href="#vang-18k">Trang Sức Vàng 18K & Ý 750</a></li>
-            <li><a href="#vong-tay">Vòng Tay & Lắc Vàng Phong Thủy</a></li>
+            <li><a href="/products?category=nhan-kim-cuong">Nhẫn Kim Cương</a></li>
+            <li><a href="/products?category=bong-tai">Bông Tai Quý Phái</a></li>
+            <li><a href="/products?category=trang-suc-vang-18k">Trang Sức Vàng 18K</a></li>
+            <li><a href="/products?category=trang-suc-bac">Trang Sức Bạc Ý 925</a></li>
           </ul>
         </div>
 
         <div>
-          <h4 className="heading-serif" style={{ fontSize: '0.9rem', color: 'var(--color-gold-400)', marginBottom: '16px' }}>Dịch Vụ Khách Hàng</h4>
+          <h4 className="heading-serif" style={{ fontSize: '0.9rem', color: 'var(--color-gold-400)', marginBottom: '16px' }}>Mua hàng</h4>
           <ul style={{ listStyle: 'none', fontSize: '0.85rem', color: 'var(--color-text-secondary)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <li><a href="#huong-dan-do-ni">Hướng Dẫn Đo Ni Nhẫn</a></li>
-            <li><a href="#chinh-sach-bao-hanh">Chính Sách Bảo Hành & Thu Đổi</a></li>
-            <li><a href="#giao-hang">Vận Chuyển & Thanh Toán</a></li>
-            <li><a href="#cau-hoi">Câu hỏi thường gặp</a></li>
+            <li><a href="/products">Tất cả sản phẩm</a></li>
+            <li><a href="/compare">So sánh</a></li>
+            <li><a href="/cart">Giỏ hàng</a></li>
+            <li><a href="/account">Tài khoản</a></li>
           </ul>
         </div>
 
         <div>
-          <h4 className="heading-serif" style={{ fontSize: '0.9rem', color: 'var(--color-gold-400)', marginBottom: '16px' }}>Hệ Thống Công Nghệ</h4>
+          <h4 className="heading-serif" style={{ fontSize: '0.9rem', color: 'var(--color-gold-400)', marginBottom: '16px' }}>Thanh toán</h4>
           <p style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-            Cửa hàng trang sức AURA: xem hàng, đặt hàng và thanh toán khi nhận hoặc qua VNPay sandbox.
+            COD hoặc VNPay. Phí vận chuyển hiện là 0 đ.
           </p>
         </div>
       </div>

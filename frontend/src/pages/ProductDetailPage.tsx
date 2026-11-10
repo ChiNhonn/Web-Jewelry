@@ -62,75 +62,8 @@ export const ProductDetailPage: React.FC = () => {
           reviewService.getProductRatingSummary(data.id).then((s: ProductRatingSummary) => setRatingSummary(s)).catch(() => {});
         }
       })
-      .catch((err: unknown) => {
-        console.warn('Failed to load product by slug, using luxury fallback:', err);
-        // Fallback luxury showcase item
-        const fallback: ProductDetail = {
-          id: 1,
-          name: 'Nhẫn Solitaire Diamond 2.0ct Chuẩn GIA',
-          slug: slug || 'nhan-solitaire-diamond-2ct',
-          baseSku: 'AURA-RING-001',
-          category: {
-            id: 1,
-            name: 'Nhẫn Kim Cương',
-            slug: 'nhan-kim-cuong',
-            status: 'ACTIVE',
-          },
-          brand: 'AURA FINE JEWELRY',
-          isFeatured: true,
-          status: 'ACTIVE',
-          materialOverview: 'Kim cương tự nhiên GIA 2.0ct • Vàng trắng Ý 18K nguyên khối',
-          shortDescription:
-            'Tác phẩm đỉnh cao nghệ thuật kim hoàn hoàng gia với viên kim cương chủ 2.0 carat chuẩn GIA nước F, độ sạch VVS1, giác cắt lý tưởng Triple Excellent.',
-          description:
-            'Được chế tác thủ công tinh xảo bởi những nghệ nhân kim hoàn trên 20 năm kinh nghiệm tại xưởng kim hoàn AURA. Viên kim cương chủ được tuyển chọn kỹ lưỡng theo tiêu chuẩn 4Cs khắt khe nhất thế giới, đi kèm giấy kiểm định khắc mã laser độc bản từ Viện Ngọc học Hoa Kỳ (GIA). Ổ nhẫn 4 chấu thanh thoát giúp tối ưu khả năng khúc xạ ánh sáng, tạo nên vũ điệu lấp lánh rực rỡ dưới mọi góc nhìn.',
-          createdAt: new Date().toISOString(),
-          images: [
-            {
-              id: 101,
-              imageUrl: '',
-              isThumbnail: true,
-              sortOrder: 1,
-            },
-          ],
-          variants: [
-            {
-              id: 1001,
-              sku: 'AURA-RING-001-WG-12',
-              sizeOption: 'Ni 12 (16.5mm)',
-              materialType: 'Vàng trắng Ý 18K',
-              originalPrice: 55000000,
-              salePrice: 48500000,
-              status: 'ACTIVE',
-              stockQuantity: 5,
-              availableQuantity: 5,
-            },
-            {
-              id: 1002,
-              sku: 'AURA-RING-001-RG-12',
-              sizeOption: 'Ni 12 (16.5mm)',
-              materialType: 'Vàng hồng Ý 18K',
-              originalPrice: 55000000,
-              salePrice: 48500000,
-              status: 'ACTIVE',
-              stockQuantity: 3,
-              availableQuantity: 3,
-            },
-            {
-              id: 1003,
-              sku: 'AURA-RING-001-PT-14',
-              sizeOption: 'Ni 14 (17.2mm)',
-              materialType: 'Bạch Kim Platinum 950',
-              originalPrice: 62000000,
-              salePrice: 56000000,
-              status: 'ACTIVE',
-              stockQuantity: 2,
-              availableQuantity: 2,
-            },
-          ],
-        };
-        setProduct(fallback);
-        setSelectedVariant(fallback.variants[0]);
+      .catch(() => {
+        setProduct(null);
       })
       .finally(() => {
         setLoading(false);
@@ -141,7 +74,7 @@ export const ProductDetailPage: React.FC = () => {
     return (
       <div style={{ backgroundColor: '#050508', minHeight: '100vh', paddingTop: '150px', textAlign: 'center' }}>
         <Sparkles size={40} color="#ff6584" style={{ animation: 'spin 2s linear infinite' }} />
-        <p style={{ marginTop: '16px', color: 'var(--color-text-secondary)' }}>Đang chiêm ngưỡng tuyệt tác...</p>
+        <p style={{ marginTop: '16px', color: 'var(--color-text-secondary)' }}>Đang tải sản phẩm...</p>
       </div>
     );
   }
@@ -201,29 +134,12 @@ export const ProductDetailPage: React.FC = () => {
         rating: newReviewRating,
         comment: newReviewComment.trim(),
       });
-      success('Cảm ơn quý khách đã gửi cảm nhận tuyệt tác!', 'Đánh Giá Thành Công');
+      success('Đã gửi nhận xét. Nhận xét hiện sau khi được duyệt.', 'Đánh giá');
       setShowReviewModal(false);
       setNewReviewComment('');
-      // Reload reviews
       reviewService.getProductReviews(product.id).then((r: any) => setReviews(r.content)).catch(() => {});
     } catch {
-      // Handled or demo review fallback
-      const mockReview: Review = {
-        id: Date.now(),
-        productId: product.id,
-        productName: product.name,
-        userId: 1,
-        customerName: 'Khách hàng',
-        rating: newReviewRating,
-        comment: newReviewComment.trim(),
-        status: 'APPROVED',
-        imageUrls: [],
-        createdAt: new Date().toISOString(),
-      };
-      setReviews((prev) => [mockReview, ...prev]);
-      success('Cảm ơn quý khách đã gửi cảm nhận tuyệt tác!', 'Đánh Giá Thành Công');
-      setShowReviewModal(false);
-      setNewReviewComment('');
+      error('Chưa gửi được nhận xét. Cần đăng nhập và đã mua sản phẩm này.', 'Đánh giá');
     } finally {
       setSubmittingReview(false);
     }
@@ -319,7 +235,7 @@ export const ProductDetailPage: React.FC = () => {
                     letterSpacing: '0.08em',
                   }}
                 >
-                  Giám định đá quý
+                  {product.category?.name || 'Sản phẩm'}
                 </span>
                 <span
                   style={{
@@ -334,7 +250,7 @@ export const ProductDetailPage: React.FC = () => {
                     letterSpacing: '0.08em',
                   }}
                 >
-                  Vàng Ý 18K
+                  {product.materialOverview || 'Chưa cập nhật chất liệu'}
                 </span>
               </div>
             </div>
@@ -379,10 +295,15 @@ export const ProductDetailPage: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '22px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <Star key={s} size={15} fill="#ff9bb2" color="#ff9bb2" />
+                  <Star
+                    key={s}
+                    size={15}
+                    fill={ratingSummary && s <= Math.round(ratingSummary.averageRating) ? '#ff9bb2' : 'none'}
+                    color="#ff9bb2"
+                  />
                 ))}
                 <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#FFFFFF', marginLeft: '6px' }}>
-                  {ratingSummary?.averageRating ? ratingSummary.averageRating.toFixed(1) : '5.0'}
+                  {ratingSummary ? ratingSummary.averageRating.toFixed(1) : '—'}
                 </span>
               </div>
               <span style={{ color: 'rgba(255, 255, 255, 0.2)' }}>•</span>
@@ -480,8 +401,8 @@ export const ProductDetailPage: React.FC = () => {
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: inStock ? '#10B981' : '#EF4444' }} />
               <span style={{ fontSize: '0.84rem', color: inStock ? '#10B981' : '#EF4444', fontWeight: 500 }}>
                 {inStock
-                  ? `Còn hàng sẵn sàng tại xưởng chế tác (${selectedVariant?.availableQuantity ?? 5} tác phẩm)`
-                  : 'Tạm thời hết hàng (Vui lòng đặt chế tác riêng)'}
+                  ? `Còn ${selectedVariant?.availableQuantity ?? 0} sản phẩm`
+                  : 'Hết hàng'}
               </span>
             </div>
 
@@ -581,19 +502,19 @@ export const ProductDetailPage: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Shield size={18} color="#ff9bb2" />
                 <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-                  Bảo hành làm mới trọn đời
+                  Tồn kho theo sản phẩm
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Truck size={18} color="#ff9bb2" />
                 <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-                  Vận chuyển bảo hiểm tận nhà
+                  Phí vận chuyển 0 đ
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <RotateCcw size={18} color="#ff9bb2" />
                 <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
-                  Thu đổi 100% kim cương GIA
+                  COD hoặc VNPay
                 </div>
               </div>
             </div>
@@ -625,10 +546,10 @@ export const ProductDetailPage: React.FC = () => {
             }}
           >
             {[
-              { id: 'desc', label: 'Ý Niệm & Chế Tác' },
-              { id: 'specs', label: 'Thông Số Kỹ Thuật & Giám Định' },
-              { id: 'sizeGuide', label: 'Bảng Đo Ni Chuẩn' },
-              { id: 'policy', label: 'Bảo hành và đổi trả' },
+              { id: 'desc', label: 'Mô tả' },
+              { id: 'specs', label: 'Thông số' },
+              { id: 'sizeGuide', label: 'Bảng ni' },
+              { id: 'policy', label: 'Thanh toán' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -653,10 +574,7 @@ export const ProductDetailPage: React.FC = () => {
           {/* Tab 1: Description */}
           {activeTab === 'desc' && (
             <div style={{ color: 'var(--color-text-secondary)', lineHeight: 1.8, fontSize: '0.94rem' }}>
-              <p style={{ marginBottom: '16px' }}>{product.description}</p>
-              <p>
-                Mỗi sản phẩm xuất xưởng từ AURA đều trải qua quy trình kiểm soát chất lượng 3 lớp độc lập: Kiểm định cấu trúc kim loại quý bằng máy huỳnh quang tia X (XRF), phân tích độ tán sắc kim cương bằng máy đo giác cắt chuyên dụng, và hoàn thiện bề mặt qua 5 cấp độ đánh bóng gương thủ công.
-              </p>
+              <p>{product.description}</p>
             </div>
           )}
 
@@ -665,7 +583,7 @@ export const ProductDetailPage: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
               {[
                 { label: 'Chất liệu', val: selectedVariant?.materialType || product.materialOverview || 'Chưa cập nhật' },
-                { label: 'Trọng lượng', val: product.weightGrams ? `${product.weightGrams} g` : 'Chưa cập nhật' },
+                { label: 'Trọng lượng', val: product.weightLabel || (product.weightGrams ? `${product.weightGrams} g` : 'Chưa cập nhật') },
                 { label: 'Loại đá', val: product.stoneType || 'Chưa cập nhật' },
                 { label: 'Độ tinh khiết', val: product.clarity || 'Chưa cập nhật' },
                 { label: 'Kích thước', val: selectedVariant?.sizeOption || 'Chưa cập nhật' },
@@ -720,23 +638,23 @@ export const ProductDetailPage: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
               <div style={{ padding: '20px', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px' }}>
                 <Award size={24} color="#ff6584" style={{ marginBottom: '10px' }} />
-                <h4 style={{ color: '#FFFFFF', fontSize: '0.95rem', marginBottom: '8px' }}>Chính sách đổi trả</h4>
+                <h4 style={{ color: '#FFFFFF', fontSize: '0.95rem', marginBottom: '8px' }}>Thanh toán</h4>
                 <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.84rem', lineHeight: 1.5 }}>
-                  Thu đổi lên đời sản phẩm lớn hơn tới 100% giá trị hóa đơn trong vòng 12 tháng đầu tiên.
+                  Thanh toán khi nhận hàng (COD) hoặc qua VNPay.
                 </p>
               </div>
               <div style={{ padding: '20px', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px' }}>
                 <Shield size={24} color="#ff6584" style={{ marginBottom: '10px' }} />
-                <h4 style={{ color: '#FFFFFF', fontSize: '0.95rem', marginBottom: '8px' }}>Làm Mới & Bảo Dưỡng</h4>
+                <h4 style={{ color: '#FFFFFF', fontSize: '0.95rem', marginBottom: '8px' }}>Vận chuyển</h4>
                 <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.84rem', lineHeight: 1.5 }}>
-                  Đánh bóng siêu âm, xi mạ rhodium và kiểm tra độ bám của chấu đính đá trọn đời hoàn toàn miễn phí.
+                  Phí vận chuyển hiện là 0 đ.
                 </p>
               </div>
               <div style={{ padding: '20px', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px' }}>
                 <Truck size={24} color="#ff6584" style={{ marginBottom: '10px' }} />
-                <h4 style={{ color: '#FFFFFF', fontSize: '0.95rem', marginBottom: '8px' }}>Giao Hàng Đồng Kiểm</h4>
+                <h4 style={{ color: '#FFFFFF', fontSize: '0.95rem', marginBottom: '8px' }}>Nhận xét</h4>
                 <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.84rem', lineHeight: 1.5 }}>
-                  Miễn phí vận chuyển bảo hiểm 100% giá trị. Quý khách đồng kiểm mã số khắc laser trước khi nhận hàng.
+                  Chỉ hiện nhận xét đã mua và được duyệt. Cửa hàng chưa ghi chính sách đổi trả riêng.
                 </p>
               </div>
             </div>
@@ -758,10 +676,10 @@ export const ProductDetailPage: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
             <div>
               <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '6px' }}>
-                Cảm Nhận Từ Chủ Nhân Tác Phẩm
+                Nhận xét
               </h3>
               <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>
-                Đánh giá xác thực từ những vị khách quý đã sở hữu tuyệt tác
+                Nhận xét đã mua và được duyệt
               </p>
             </div>
 
@@ -810,7 +728,7 @@ export const ProductDetailPage: React.FC = () => {
                           {rev.customerName || 'Khách hàng'}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: '#10B981' }}>
-                          <CheckCircle2 size={12} /> Đã xác thực sở hữu tác phẩm
+                          <CheckCircle2 size={12} /> Đã mua
                         </div>
                       </div>
                     </div>
@@ -830,7 +748,7 @@ export const ProductDetailPage: React.FC = () => {
             </div>
           ) : (
             <p style={{ color: 'var(--color-text-muted)', fontSize: '0.88rem', textAlign: 'center', padding: '30px 0' }}>
-              Hãy là vị khách quý đầu tiên để lại cảm nhận về tuyệt tác trang sức này.
+              Chưa có nhận xét nào cho sản phẩm này.
             </p>
           )}
         </div>
@@ -864,7 +782,7 @@ export const ProductDetailPage: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#FFFFFF', marginBottom: '8px' }}>
-              Cảm Nhận Về Tuyệt Tác
+              Viết nhận xét
             </h3>
             <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.82rem', marginBottom: '24px' }}>
               {product.name}

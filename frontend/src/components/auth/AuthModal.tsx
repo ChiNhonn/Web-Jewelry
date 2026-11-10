@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
 import { useToast } from '../../context/ToastContext';
-import { X, Lock, Mail, User, Phone, Sparkles, ShieldCheck, ArrowRight } from 'lucide-react';
+import { X, Lock, Mail, User, Phone, Sparkles, ArrowRight } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
   const { isAuthModalOpen, closeAuthModal, authModalMode, openAuthModal, login, register } = useAuth();
@@ -55,11 +55,15 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  const fillQuickAccount = (username: string, pass: string) => {
-    setLoginForm({
-      usernameOrEmail: username,
-      password: pass,
-    });
+  const fieldStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px 12px',
+    borderRadius: '8px',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    color: '#FFFFFF',
+    fontSize: '0.85rem',
+    outline: 'none',
   };
 
   return (
@@ -126,7 +130,7 @@ export const AuthModal: React.FC = () => {
               marginBottom: '8px',
             }}
           >
-            <Sparkles size={14} /> AURA PRIVILEGE PORTAL
+            <Sparkles size={14} /> AURA
           </div>
           <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#FFFFFF' }}>
             {authModalMode === 'login' ? 'Đăng nhập' : 'Đăng ký tài khoản'}
@@ -184,7 +188,7 @@ export const AuthModal: React.FC = () => {
 
         {/* LOGIN FORM */}
         {authModalMode === 'login' ? (
-          <form onSubmit={handleLoginSubmit}>
+          <form onSubmit={handleLoginSubmit} autoComplete="on" key="login-form">
             <div style={{ marginBottom: '18px' }}>
               <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: '8px' }}>
                 Tên đăng nhập hoặc Email
@@ -193,7 +197,9 @@ export const AuthModal: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="admin hoặc customer@example.com"
+                  placeholder="Tên đăng nhập hoặc email"
+                  autoComplete="username"
+                  name="username"
                   value={loginForm.usernameOrEmail}
                   onChange={(e) => setLoginForm({ ...loginForm, usernameOrEmail: e.target.value })}
                   style={{
@@ -219,7 +225,9 @@ export const AuthModal: React.FC = () => {
                 <input
                   type="password"
                   required
-                  placeholder="••••••••"
+                  placeholder="Mật khẩu"
+                  autoComplete="current-password"
+                  name="password"
                   value={loginForm.password}
                   onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                   style={{
@@ -291,52 +299,10 @@ export const AuthModal: React.FC = () => {
               {submitting ? 'Đang xác thực...' : 'Đăng nhập'} <ArrowRight size={16} />
             </button>
 
-            {/* Quick Demo Credentials */}
-            <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-              <p style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)', marginBottom: '10px', textAlign: 'center' }}>
-                TÀI KHOẢN MẪU ĐỂ TEST HỆ THỐNG NHANH
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <button
-                  type="button"
-                  onClick={() => fillQuickAccount('customer', 'Password123!')}
-                  style={{
-                    padding: '8px 10px',
-                    borderRadius: '6px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    color: 'var(--color-sakura-300)',
-                    fontSize: '0.76rem',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  👤 Khách Hàng Demo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fillQuickAccount('duongtrinhan00@gmail.com', 'Password123!')}
-                  style={{
-                    padding: '8px 10px',
-                    borderRadius: '6px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(212, 175, 55, 0.3)',
-                    color: 'var(--color-gold-400)',
-                    fontSize: '0.76rem',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <ShieldCheck size={12} style={{ display: 'inline', marginRight: '4px' }} /> Tài khoản quản trị
-                </button>
-              </div>
-            </div>
           </form>
         ) : (
           /* REGISTER FORM */
-          <form onSubmit={handleRegisterSubmit}>
+          <form onSubmit={handleRegisterSubmit} autoComplete="off" key="register-form">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.76rem', color: 'var(--color-text-secondary)', marginBottom: '6px' }}>
@@ -345,19 +311,12 @@ export const AuthModal: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="Nguyễn Văn"
+                  name="register-family-name"
+                  autoComplete="off"
+                  placeholder="Nhập họ"
                   value={registerForm.firstName}
                   onChange={(e) => setRegisterForm({ ...registerForm, firstName: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: '#FFFFFF',
-                    fontSize: '0.85rem',
-                    outline: 'none',
-                  }}
+                  style={fieldStyle}
                 />
               </div>
               <div>
@@ -367,19 +326,12 @@ export const AuthModal: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="An"
+                  name="register-given-name"
+                  autoComplete="off"
+                  placeholder="Nhập tên"
                   value={registerForm.lastName}
                   onChange={(e) => setRegisterForm({ ...registerForm, lastName: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: '#FFFFFF',
-                    fontSize: '0.85rem',
-                    outline: 'none',
-                  }}
+                  style={fieldStyle}
                 />
               </div>
             </div>
@@ -392,7 +344,9 @@ export const AuthModal: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="an_nguyen2026"
+                  name="register-username"
+                  autoComplete="off"
+                  placeholder="Nhập tên tài khoản"
                   value={registerForm.username}
                   onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
                   style={{
@@ -418,7 +372,9 @@ export const AuthModal: React.FC = () => {
                 <input
                   type="email"
                   required
-                  placeholder="an.nguyen@gmail.com"
+                  name="register-email"
+                  autoComplete="off"
+                  placeholder="Nhập email"
                   value={registerForm.email}
                   onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
                   style={{
@@ -444,7 +400,9 @@ export const AuthModal: React.FC = () => {
                 <div style={{ position: 'relative' }}>
                   <input
                     type="tel"
-                    placeholder="0912345678"
+                    name="register-phone"
+                    autoComplete="off"
+                    placeholder="Nhập số điện thoại"
                     value={registerForm.phone}
                     onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })}
                     style={{
@@ -469,7 +427,9 @@ export const AuthModal: React.FC = () => {
                   <input
                     type="password"
                     required
-                    placeholder="Tối thiểu 6 ký tự"
+                    name="register-password"
+                    autoComplete="new-password"
+                    placeholder="Ít nhất 6 ký tự"
                     value={registerForm.password}
                     onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
                     style={{

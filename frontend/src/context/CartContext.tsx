@@ -117,7 +117,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Calculations
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const shippingFee = subtotal > 0 && subtotal < 10000000 ? 50000 : 0;
+  const shippingFee = 0;
 
   let discountAmount = 0;
   if (appliedCoupon) {
@@ -290,31 +290,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             maxDiscount: coupon.maxDiscount,
             minOrderValue: coupon.minOrderValue,
           });
-          success(`Áp dụng mã ưu đãi ${trimmed} thành công!`, 'Ưu Đãi Đặc Quyền');
+          success(`Áp dụng mã ${trimmed} thành công!`, 'Mã giảm giá');
           return true;
         }
       } catch {
-        // Fallback for demo coupon codes if offline
-        if (trimmed === 'AURA10') {
-          setAppliedCoupon({
-            code: 'AURA10',
-            discountType: 'PERCENTAGE',
-            discountValue: 10,
-            maxDiscount: 2000000,
-            minOrderValue: 5000000,
-          });
-          success('Áp dụng mã ưu đãi AURA10 giảm 10% thành công!', 'Ưu Đãi Đặc Quyền');
-          return true;
-        } else if (trimmed === 'DIAMOND500K') {
-          setAppliedCoupon({
-            code: 'DIAMOND500K',
-            discountType: 'FIXED_AMOUNT',
-            discountValue: 500000,
-            minOrderValue: 10000000,
-          });
-          success('Áp dụng mã ưu đãi DIAMOND500K giảm 500.000₫ thành công!', 'Ưu Đãi Đặc Quyền');
-          return true;
-        }
+        // Mã không có trên máy chủ thì không tự giảm giá.
       }
 
       error('Mã giảm giá không hợp lệ hoặc đã hết lượt sử dụng.', 'Không Thể Áp Dụng');

@@ -19,13 +19,13 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/payments")
 @RequiredArgsConstructor
-@Tag(name = "Payment Gateways", description = "Endpoints for initiating and processing VNPay, VietQR, and COD payments")
+@Tag(name = "Payment Gateways", description = "Endpoints for initiating and processing VNPay and COD payments")
 public class PaymentController {
 
     private final PaymentService paymentService;
 
     @PostMapping("/{orderCode}/initiate")
-    @Operation(summary = "Initiate payment for order", description = "Khởi tạo thanh toán: sinh URL thanh toán VNPay Sandbox hoặc tạo mã VietQR chuyển khoản")
+    @Operation(summary = "Initiate payment for order", description = "Khởi tạo thanh toán VNPay sandbox")
     @SecurityRequirement(name = "BearerAuth")
     public ResponseEntity<ApiResponse<PaymentInitiateResponse>> initiatePayment(
             @AuthenticationPrincipal UserPrincipal currentUser,
@@ -38,7 +38,7 @@ public class PaymentController {
     }
 
     @GetMapping("/{orderCode}")
-    @Operation(summary = "Get payment details for order", description = "Xem chi tiết trạng thái thanh toán và thông tin chuyển khoản VietQR")
+    @Operation(summary = "Get payment details for order", description = "Xem trạng thái thanh toán của đơn hàng")
     @SecurityRequirement(name = "BearerAuth")
     public ResponseEntity<ApiResponse<PaymentInitiateResponse>> getPaymentDetails(
             @AuthenticationPrincipal UserPrincipal currentUser,

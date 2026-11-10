@@ -4,7 +4,7 @@ import { PaymentInitiateResponse, VNPayReturnResponse } from '../types/payment.t
 
 export const paymentService = {
   /**
-   * Initiate payment for an order (generates VNPay payment URL or VietQR transfer payload)
+   * Tạo liên kết thanh toán VNPay cho đơn hàng.
    */
   async initiatePayment(orderCode: string, accessToken?: string): Promise<PaymentInitiateResponse> {
     const response = await apiClient.post<ApiResponse<PaymentInitiateResponse>>(

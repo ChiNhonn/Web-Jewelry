@@ -71,11 +71,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         success(`Chào mừng ${response.user.fullName || response.user.username} quay trở lại!`, 'Đăng Nhập Thành Công');
         return response;
       } catch (err: unknown) {
-        let msg = 'Tài khoản hoặc mật khẩu không chính xác.';
+        let msg = 'Email hoặc mật khẩu không đúng.';
         if (err && typeof err === 'object' && 'response' in err) {
           const axiosErr = err as { response?: { data?: { message?: string } } };
-          if (axiosErr.response?.data?.message) {
-            msg = axiosErr.response.data.message;
+          const serverMessage = axiosErr.response?.data?.message;
+          if (serverMessage && !serverMessage.includes('Bad credentials') && !serverMessage.includes('Full authentication')) {
+            msg = serverMessage;
           }
         }
         error(msg, 'Đăng Nhập Thất Bại');

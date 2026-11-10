@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Heart, Star, Gem } from 'lucide-react';
+import { ShoppingBag, Heart, Gem, Scale } from 'lucide-react';
 import { ProductSummary } from '../../types/product.types';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -17,9 +17,11 @@ interface ProductCardProps {
 export const ProductCard: React.FC<ProductCardProps> = ({ product, className, style }) => {
   const { addToCart } = useCart();
   const { isAuthenticated, openAuthModal } = useAuth();
-  const { add: addCompare } = useCompare();
-  const { success, error } = useToast();
+  const { slugs: compareSlugs, add: addCompare, remove: removeCompare } = useCompare();
+  const { success, error, info } = useToast();
   const [imageFailed, setImageFailed] = React.useState(false);
+  const [liked, setLiked] = React.useState(false);
+  const compared = compareSlugs.includes(product.slug);
 
   const handleQuickAdd = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -53,11 +55,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className, st
       return;
     }
     try {
-      await wishlistService.addToWishlist(product.id);
-      success(`Đã thêm "${product.name}" vào danh sách yêu thích.`, 'Yêu thích');
+      if (liked) {
+        await wishlistService.removeFromWishlist(product.id);
+        setLiked(false);
+        info(`Đã bỏ "${product.name}" khỏi yêu thích.`);
+      } else {
+        await wishlistService.addToWishlist(product.id);
+        setLiked(true);
+        success(`Đã thêm "${product.name}" vào danh sách yêu thích.`, 'Yêu thích');
+      }
     } catch {
-      error('Không thêm được vào danh sách yêu thích.');
+      error('Không cập nhật được danh sách yêu thích.');
     }
+  };
+
+  const handleCompareClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (compared) {
+      removeCompare(product.slug);
+      info(`Đã bỏ "${product.name}" khỏi so sánh.`);
+      return;
+    }
+    addCompare(product.slug, product.name);
   };
 
   const formatPrice = (price: number) => {
@@ -83,19 +103,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className, st
       }}
     >
       {/* Product Image Area */}
+      <div style={{ position: 'relative', height: '240px', marginBottom: '16px' }}>
       <Link
         to={`/products/${product.slug}`}
         aria-label={product.name}
         style={{
           position: 'relative',
-          height: '240px',
+          height: '100%',
           borderRadius: '12px',
           backgroundColor: '#0a0c12',
           overflow: 'hidden',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: '16px',
           border: '1px solid rgba(255, 255, 255, 0.05)',
         }}
       >
@@ -133,7 +153,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className, st
         )}
 
         {/* Badges */}
-        <div style={{ position: 'absolute', top: '12px', left: '12px', right: '52px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-start' }}>
+        <div style={{ position: 'absolute', top: '12px', left: '12px', right: '108px', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-start' }}>
           {hasDiscount && (
             <span
               style={{
@@ -173,72 +193,53 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className, st
           )}
         </div>
 
-        {/* Wishlist Button */}
+      </Link>
+      <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 3, display: 'flex', gap: '8px' }}>
         <button
+          type="button"
           onClick={handleWishlistClick}
-          title="Thêm vào danh sách yêu thích"
+          title={liked ? 'Bỏ yêu thích' : 'Yêu thích'}
+          aria-label={liked ? 'Bỏ yêu thích' : 'Yêu thích'}
           style={{
-            position: 'absolute',
-            top: '12px',
-            right: '12px',
-            width: '32px',
-            height: '32px',
+            width: '40px',
+            height: '40px',
             borderRadius: '50%',
-            backgroundColor: 'rgba(5, 5, 8, 0.65)',
-            backdropFilter: 'blur(6px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: liked ? 'rgba(255, 101, 132, 0.92)' : 'rgba(5, 5, 8, 0.78)',
+            border: `1px solid ${liked ? '#ff6584' : 'rgba(255, 255, 255, 0.2)'}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--color-text-secondary)',
+            color: '#fff',
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#ff6584';
-            e.currentTarget.style.borderColor = '#ff6584';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--color-text-secondary)';
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
           }}
         >
-          <Heart size={15} />
+          <Heart size={18} fill={liked ? '#fff' : 'none'} />
         </button>
         <button
           type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            addCompare(product.slug, product.name);
-          }}
+          onClick={handleCompareClick}
+          title={compared ? 'Bỏ so sánh' : 'So sánh'}
+          aria-label={compared ? 'Bỏ so sánh' : 'So sánh'}
           style={{
-            position: 'absolute',
-            bottom: '12px',
-            left: '12px',
-            zIndex: 2,
-            borderRadius: '999px',
-            padding: '4px 10px',
-            fontSize: '0.72rem',
-            backgroundColor: 'rgba(5, 5, 8, 0.78)',
-            color: '#fff',
-            border: '1px solid rgba(255,255,255,0.15)',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            backgroundColor: compared ? 'rgba(232, 197, 107, 0.95)' : 'rgba(5, 5, 8, 0.78)',
+            border: `1px solid ${compared ? '#e8c56b' : 'rgba(255, 255, 255, 0.2)'}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: compared ? '#1a1408' : '#fff',
             cursor: 'pointer',
           }}
         >
-          So sánh
+          <Scale size={18} />
         </button>
-      </Link>
+      </div>
+      </div>
 
       {/* Product Information */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
-          {[1, 2, 3, 4, 5].map((s) => (
-            <Star key={s} size={12} fill="#ff9bb2" color="#ff9bb2" />
-          ))}
-          <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginLeft: '4px' }}>(5.0)</span>
-        </div>
-
         <Link to={`/products/${product.slug}`}>
           <h3
             style={{

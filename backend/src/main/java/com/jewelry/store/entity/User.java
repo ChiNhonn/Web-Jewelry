@@ -4,71 +4,59 @@ import com.jewelry.store.entity.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 @Entity
-@Table(
-        name = "users",
-        indexes = {
-                @Index(name = "idx_users_email", columnList = "email"),
-                @Index(name = "idx_users_username", columnList = "username"),
-                @Index(name = "idx_users_status", columnList = "status")
-        }
-)
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User extends BaseAuditableEntity {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "username", unique = true, nullable = false, length = 50)
+    @Column(nullable = false, unique = true, length = 100)
     private String username;
 
-    @Column(name = "email", unique = true, nullable = false, length = 100)
+    @Column(name = "full_name", nullable = false)
+    private String fullName;
+
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
-    private String passwordHash;
-
-    @Column(name = "first_name", nullable = false, length = 50)
-    private String firstName;
-
-    @Column(name = "last_name", nullable = false, length = 50)
-    private String lastName;
-
-    @Column(name = "phone", length = 20)
+    @Column(length = 30)
     private String phone;
 
-    @Column(name = "avatar_url", length = 500)
-    private String avatarUrl;
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
-    @Builder.Default
-    private UserStatus status = UserStatus.ACTIVE;
+    @Column(nullable = false, length = 20)
+    private String role;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    @Builder.Default
-    private Set<Role> roles = new HashSet<>();
+    @Column(columnDefinition = "TEXT")
+    private String address;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Column(name = "is_locked", nullable = false)
     @Builder.Default
-    private List<Address> addresses = new ArrayList<>();
+    private boolean locked = false;
 
     public String getFullName() {
-        return (lastName != null ? lastName : "") + " " + (firstName != null ? firstName : "");
+        return fullName == null ? "" : fullName;
+    }
+
+    public UserStatus getStatus() {
+        if (locked) {
+            return UserStatus.LOCKED;
+        }
+        if ("GUEST".equalsIgnoreCase(role)) {
+            return UserStatus.INACTIVE;
+        }
+        return UserStatus.ACTIVE;
+    }
+
+    public boolean isGuest() {
+        return "GUEST".equalsIgnoreCase(role) || "__guest__".equalsIgnoreCase(username);
     }
 }

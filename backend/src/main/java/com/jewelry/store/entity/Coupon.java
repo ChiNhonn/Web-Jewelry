@@ -1,6 +1,5 @@
 package com.jewelry.store.entity;
 
-import com.jewelry.store.entity.enums.DiscountType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -8,47 +7,35 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-        name = "coupons",
-        indexes = {
-                @Index(name = "idx_coupons_code", columnList = "code")
-        }
-)
+@Table(name = "coupons")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Coupon extends BaseAuditableEntity {
+public class Coupon {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "code", unique = true, nullable = false, length = 50)
-    private String code; // VD: JEWELRY10, DIAMOND2026
+    @Column(nullable = false, unique = true, length = 50)
+    private String code;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "discount_type", nullable = false, length = 20)
-    private DiscountType discountType;
+    @Column(nullable = false)
+    private String title;
+
+    @Column(name = "discount_type", nullable = false, length = 30)
+    private String discountType;
 
     @Column(name = "discount_value", nullable = false, precision = 15, scale = 2)
     private BigDecimal discountValue;
 
-    @Column(name = "min_order_value", precision = 15, scale = 2)
-    @Builder.Default
-    private BigDecimal minOrderValue = BigDecimal.ZERO;
+    @Column(name = "min_order_amount", nullable = false, precision = 15, scale = 2)
+    private BigDecimal minOrderAmount;
 
-    @Column(name = "max_discount", precision = 15, scale = 2)
-    private BigDecimal maxDiscount; // Giới hạn tối đa nếu là discount theo %
-
-    @Column(name = "usage_limit", nullable = false)
-    @Builder.Default
-    private int usageLimit = 100;
-
-    @Column(name = "used_count", nullable = false)
-    @Builder.Default
-    private int usedCount = 0;
+    @Column(name = "max_discount_amount", precision = 15, scale = 2)
+    private BigDecimal maxDiscountAmount;
 
     @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;
@@ -56,16 +43,15 @@ public class Coupon extends BaseAuditableEntity {
     @Column(name = "end_date", nullable = false)
     private LocalDateTime endDate;
 
-    @Column(name = "is_active", nullable = false)
-    @Builder.Default
-    private boolean isActive = true;
+    @Column(name = "usage_limit", nullable = false)
+    private Integer usageLimit;
 
-    public boolean isValidForUse(BigDecimal orderTotal) {
-        LocalDateTime now = LocalDateTime.now();
-        if (!isActive) return false;
-        if (now.isBefore(startDate) || now.isAfter(endDate)) return false;
-        if (usedCount >= usageLimit) return false;
-        if (minOrderValue != null && orderTotal.compareTo(minOrderValue) < 0) return false;
-        return true;
-    }
+    @Column(name = "used_count", nullable = false)
+    private Integer usedCount;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean active;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 }

@@ -45,6 +45,7 @@ export interface ProductSummary {
   originalPrice?: number;
   defaultVariantId?: number;
   thumbnailUrl?: string;
+  stockQuantity?: number;
   status: 'ACTIVE' | 'INACTIVE' | 'DRAFT' | 'OUT_OF_STOCK';
   createdAt: string;
 }
@@ -59,6 +60,7 @@ export interface ProductDetail {
   shortDescription?: string;
   materialOverview?: string;
   weightGrams?: number;
+  weightLabel?: string;
   stoneType?: string;
   clarity?: string;
   warranty?: string;

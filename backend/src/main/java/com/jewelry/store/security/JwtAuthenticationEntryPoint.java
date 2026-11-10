@@ -42,7 +42,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.UNAUTHORIZED.value())
                 .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
-                .message("Full authentication is required to access this resource: " + authException.getMessage())
+                .message("Bạn cần đăng nhập để tiếp tục.")
                 .path(request.getRequestURI())
                 .build();
 

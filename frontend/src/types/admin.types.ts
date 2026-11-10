@@ -44,6 +44,7 @@ export interface UpdateThresholdPayload {
 export interface AdminCoupon {
   id: number;
   code: string;
+  title?: string;
   discountType: DiscountTypeValue;
   discountValue: number;
   minOrderValue?: number;

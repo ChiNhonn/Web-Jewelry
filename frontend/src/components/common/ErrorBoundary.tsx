@@ -78,7 +78,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </h2>
 
             <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.92rem', lineHeight: 1.6, marginBottom: '32px' }}>
-              Hệ thống AURA gặp một sự cố kết xuất ngoài ý muốn. Mọi dữ liệu giỏ hàng và bảo mật của quý khách vẫn được lưu giữ an toàn.
+              Trang này gặp lỗi khi hiển thị. Tải lại để xem tiếp.
             </p>
 
             <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>

@@ -17,7 +17,6 @@ public class PaymentInitiateResponse {
     private PaymentMethodType paymentMethod;
     private PaymentStatus paymentStatus;
     private BigDecimal amount;
-    private String paymentUrl; // Dành cho VNPay redirect
-    private BankTransferDetails bankTransfer; // Dành cho VietQR chuyển khoản
+    private String paymentUrl;
     private String message;
 }

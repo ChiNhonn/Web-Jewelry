@@ -12,6 +12,11 @@ export const reviewService = {
   /**
    * Get approved reviews for a product with pagination
    */
+  async getLatestReviews(limit: number = 6): Promise<Review[]> {
+    const response = await apiClient.get<ApiResponse<Review[]>>(`/api/v1/reviews/latest?limit=${limit}`);
+    return response.data.data;
+  },
+
   async getProductReviews(
     productId: number,
     page: number = 0,
