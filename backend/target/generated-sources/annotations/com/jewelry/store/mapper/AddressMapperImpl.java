@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-11-08T19:42:08+0700",
-    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.46.200.v20261008-1115, environment: Java 25.0.4.1 (Eclipse Adoptium)"
+    date = "2026-11-09T00:45:38+0700",
+    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.12.1 (Oracle Corporation)"
 )
 @Component
 public class AddressMapperImpl implements AddressMapper {
@@ -27,13 +27,13 @@ public class AddressMapperImpl implements AddressMapper {
         if ( request.getIsDefault() != null ) {
             address.isDefault( request.getIsDefault() );
         }
-        address.district( request.getDistrict() );
-        address.phone( request.getPhone() );
-        address.postalCode( request.getPostalCode() );
-        address.province( request.getProvince() );
         address.receiverName( request.getReceiverName() );
+        address.phone( request.getPhone() );
         address.streetAddress( request.getStreetAddress() );
         address.ward( request.getWard() );
+        address.district( request.getDistrict() );
+        address.province( request.getProvince() );
+        address.postalCode( request.getPostalCode() );
 
         return address.build();
     }
@@ -46,15 +46,15 @@ public class AddressMapperImpl implements AddressMapper {
 
         AddressResponse.AddressResponseBuilder addressResponse = AddressResponse.builder();
 
-        addressResponse.createdAt( address.getCreatedAt() );
-        addressResponse.district( address.getDistrict() );
         addressResponse.id( address.getId() );
-        addressResponse.phone( address.getPhone() );
-        addressResponse.postalCode( address.getPostalCode() );
-        addressResponse.province( address.getProvince() );
         addressResponse.receiverName( address.getReceiverName() );
+        addressResponse.phone( address.getPhone() );
         addressResponse.streetAddress( address.getStreetAddress() );
         addressResponse.ward( address.getWard() );
+        addressResponse.district( address.getDistrict() );
+        addressResponse.province( address.getProvince() );
+        addressResponse.postalCode( address.getPostalCode() );
+        addressResponse.createdAt( address.getCreatedAt() );
 
         addressResponse.fullAddress( address.getFullAddress() );
         addressResponse.isDefault( address.isDefault() );

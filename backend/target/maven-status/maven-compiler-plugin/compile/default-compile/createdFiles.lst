@@ -10,7 +10,6 @@ com\jewelry\store\entity\ReviewImage$ReviewImageBuilder.class
 com\jewelry\store\dto\response\CategoryResponse$CategoryResponseBuilder.class
 com\jewelry\store\entity\enums\PaymentMethodType.class
 com\jewelry\store\dto\request\CreateCouponRequest$CreateCouponRequestBuilder.class
-com\jewelry\store\entity\Cart$CartBuilder.class
 com\jewelry\store\dto\response\CouponResponse.class
 com\jewelry\store\dto\request\CreateCategoryRequest.class
 com\jewelry\store\dto\request\UpdateReviewStatusRequest.class
@@ -38,7 +37,6 @@ com\jewelry\store\service\AuthService.class
 com\jewelry\store\dto\response\AuthResponse$AuthResponseBuilder.class
 com\jewelry\store\dto\request\StockAdjustmentRequest$AdjustmentType.class
 com\jewelry\store\controller\admin\AdminProductController.class
-com\jewelry\store\specification\ProductSpecification.class
 com\jewelry\store\dto\request\UpdateReviewStatusRequest$UpdateReviewStatusRequestBuilder.class
 com\jewelry\store\entity\enums\ProductStatus.class
 com\jewelry\store\repository\ReviewRepository.class
@@ -52,7 +50,6 @@ com\jewelry\store\service\impl\AddressServiceImpl.class
 com\jewelry\store\config\PaymentProperties$VNPayProperties.class
 com\jewelry\store\entity\Role$RoleBuilder.class
 com\jewelry\store\service\impl\AdminUserServiceImpl.class
-com\jewelry\store\mapper\ProductMapper.class
 com\jewelry\store\repository\CategoryRepository.class
 com\jewelry\store\dto\response\ProductVariantResponse$ProductVariantResponseBuilder.class
 com\jewelry\store\entity\Address.class
@@ -66,7 +63,6 @@ com\jewelry\store\service\impl\CategoryServiceImpl.class
 com\jewelry\store\dto\response\DashboardOverviewResponse$DashboardOverviewResponseBuilder.class
 com\jewelry\store\controller\WishlistController.class
 com\jewelry\store\dto\response\AddressResponse.class
-com\jewelry\store\mapper\OrderMapper.class
 com\jewelry\store\controller\admin\AdminCouponController.class
 com\jewelry\store\service\impl\PaymentServiceImpl$1.class
 com\jewelry\store\entity\Payment$PaymentBuilder.class
@@ -86,13 +82,11 @@ com\jewelry\store\dto\response\AdminUserDetailResponse$AdminUserDetailResponseBu
 com\jewelry\store\repository\PaymentRepository.class
 com\jewelry\store\dto\response\OrderSummaryResponse.class
 com\jewelry\store\entity\Category.class
-com\jewelry\store\repository\CartRepository.class
 com\jewelry\store\entity\BaseAuditableEntity.class
 com\jewelry\store\config\OpenApiConfig.class
 com\jewelry\store\entity\enums\OrderStatus.class
 com\jewelry\store\entity\User$UserBuilder.class
 com\jewelry\store\entity\ProductVariant.class
-com\jewelry\store\mapper\CategoryMapper.class
 com\jewelry\store\dto\response\LowStockAlertResponse.class
 com\jewelry\store\dto\response\DashboardOverviewResponse.class
 com\jewelry\store\entity\Review.class
@@ -163,7 +157,6 @@ com\jewelry\store\dto\request\CreateReviewRequest$CreateReviewRequestBuilder.cla
 com\jewelry\store\dto\response\WishlistItemResponse.class
 com\jewelry\store\dto\request\ShippingAddressDto$ShippingAddressDtoBuilder.class
 com\jewelry\store\controller\admin\AdminInventoryController.class
-com\jewelry\store\mapper\CartMapper.class
 com\jewelry\store\controller\OrderController.class
 com\jewelry\store\dto\response\CategorySalesResponse$CategorySalesResponseBuilder.class
 com\jewelry\store\dto\response\AddressResponse$AddressResponseBuilder.class
@@ -176,11 +169,10 @@ com\jewelry\store\entity\enums\DiscountType.class
 com\jewelry\store\security\CustomUserDetailsService.class
 com\jewelry\store\service\impl\InventoryServiceImpl$1.class
 com\jewelry\store\dto\request\CreateCouponRequest.class
-com\jewelry\store\mapper\ProductMapperImpl.class
-com\jewelry\store\mapper\CartMapperImpl.class
 com\jewelry\store\mapper\ReviewMapperImpl.class
 com\jewelry\store\dto\common\ApiResponse.class
 com\jewelry\store\entity\ProductVariant$ProductVariantBuilder.class
+com\jewelry\store\util\StoreText$1.class
 com\jewelry\store\dto\response\AdminCouponResponse.class
 com\jewelry\store\controller\ProductController.class
 com\jewelry\store\dto\request\CreateOrderRequest.class
@@ -208,7 +200,6 @@ com\jewelry\store\dto\response\ProductVariantResponse.class
 com\jewelry\store\dto\response\UserSummaryResponse$UserSummaryResponseBuilder.class
 com\jewelry\store\dto\response\ProductRatingSummaryResponse$ProductRatingSummaryResponseBuilder.class
 com\jewelry\store\dto\request\LoginRequest.class
-com\jewelry\store\entity\Cart.class
 com\jewelry\store\exception\ResourceNotFoundException.class
 com\jewelry\store\dto\response\VNPayReturnResponse.class
 com\jewelry\store\entity\Address$AddressBuilder.class
@@ -221,7 +212,6 @@ com\jewelry\store\util\SlugUtils.class
 com\jewelry\store\dto\response\AdminUserDetailResponse.class
 com\jewelry\store\dto\response\ProductSummaryResponse.class
 com\jewelry\store\dto\response\InventoryDetailResponse$InventoryDetailResponseBuilder.class
-com\jewelry\store\mapper\CategoryMapperImpl.class
 com\jewelry\store\entity\CartItem.class
 com\jewelry\store\entity\ProductImage.class
 com\jewelry\store\security\UserPrincipal.class
@@ -251,12 +241,10 @@ com\jewelry\store\entity\enums\UserStatus.class
 com\jewelry\store\dto\request\UpdateCategoryRequest$UpdateCategoryRequestBuilder.class
 com\jewelry\store\dto\request\UpdateUserRoleRequest.class
 com\jewelry\store\dto\common\ApiResponse$ApiResponseBuilder.class
-com\jewelry\store\mapper\OrderMapperImpl.class
 com\jewelry\store\dto\response\ReviewResponse$ReviewResponseBuilder.class
 com\jewelry\store\security\JwtTokenProvider.class
 com\jewelry\store\service\FileUploadService.class
 com\jewelry\store\entity\Order.class
-com\jewelry\store\mapper\UserMapperImpl.class
 com\jewelry\store\dto\request\AddressRequest$AddressRequestBuilder.class
 com\jewelry\store\entity\Role.class
 com\jewelry\store\config\CorsConfig.class

@@ -42,10 +42,6 @@ payment:
     pay-url: ${VNPAY_PAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
     return-url: ${VNPAY_RETURN_URL:http://localhost:5173/payment/vnpay-return}
     api-url: ${VNPAY_API_URL:https://sandbox.vnpayment.vn/merchant_webapi/api/transaction}
-  vietqr:
-    bank-id: ${VIETQR_BANK_ID:MB}
-    account-no: ${VIETQR_ACCOUNT_NO:0987654321}
-    account-name: ${VIETQR_ACCOUNT_NAME:AURA FINE JEWELRY}
 
 # File Upload Configuration
 file:
